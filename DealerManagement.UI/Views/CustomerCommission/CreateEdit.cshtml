@@ -1,0 +1,159 @@
+@model DealerManagement.Model.Entities.CustomerCommission
+@{
+    var isUpdate = Model.Operation == "update";
+    ViewData["Title"] = isUpdate ? "Edit Dealer Commission" : "New Dealer Commission";
+}
+
+@Html.Partial("_Header", new DealerManagement.Model.Common.HeaderModel()
+{
+    HeaderName = (isUpdate ? "Edit" : "Record") + " Dealer Commission",
+    BreadCrums = new Dictionary<string, string>()
+    {
+        {"/CustomerCommission", "Dealer Commission"},
+        {"", isUpdate ? "Edit" : "Record"}
+    }
+})
+
+<link href="~/css/button.css" rel="stylesheet" />
+
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header p-2">
+            <button type="button" class="button btnSave @(isUpdate ? "sslUpdate" : "sslSave")" id="btnSaveComm">
+                <i class="fas fa-save mr-1"></i> @(isUpdate ? "Update" : "Save")
+            </button>
+            <a href="/CustomerCommission/Index" class="btn btn-secondary btn-sm float-right ml-2">
+                <i class="fas fa-arrow-left mr-1"></i> Back to List
+            </a>
+            @if (isUpdate)
+            {
+                <a href="/CustomerCommission/Create" class="button NewButton addNewButton float-right">
+                    <i class="fas fa-plus mr-1"></i> New
+                </a>
+            }
+        </div>
+    </div>
+</div>
+
+<form id="frmComm">
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.CustomerCommissionID)
+    @Html.HiddenFor(m => m.Operation)
+
+    <div class="container-fluid">
+        <div class="card card-secondary">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-percentage mr-1"></i> Commission Information</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 form-group">
+                        <label>Customer / Dealer <span class="text-danger">*</span></label>
+                        <select id="CustomerID" name="CustomerID" class="form-control form-control-sm" data-selected="@Model.CustomerID" required>
+                            <option value="">----- Select Customer -----</option>
+                        </select>
+                        @Html.ValidationMessageFor(m => m.CustomerID, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="col-md-3 form-group">
+                        @Html.LabelFor(m => m.CommissionDate) <span class="text-danger">*</span>
+                        <input type="date" id="CommissionDate" name="CommissionDate" class="form-control form-control-sm" value="@Model.CommissionDate.ToString("yyyy-MM-dd")" required />
+                    </div>
+
+                    <div class="col-md-3 form-group">
+                        @Html.LabelFor(m => m.CommissionType) <span class="text-danger">*</span>
+                        <select id="CommissionType" name="CommissionType" class="form-control form-control-sm">
+                            <option value="Target Incentive" selected="@(Model.CommissionType == "Target Incentive")">Target Incentive</option>
+                            <option value="Monthly Rebate" selected="@(Model.CommissionType == "Monthly Rebate")">Monthly Rebate</option>
+                            <option value="Annual Bonus" selected="@(Model.CommissionType == "Annual Bonus")">Annual Bonus</option>
+                            <option value="Special Discount" selected="@(Model.CommissionType == "Special Discount")">Special Discount</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3 form-group">
+                        @Html.LabelFor(m => m.CommissionAmount) <span class="text-danger">*</span>
+                        @Html.TextBoxFor(m => m.CommissionAmount, new { @class = "form-control form-control-sm text-right", type = "number", step = "any", min = "0", required = "required" })
+                        @Html.ValidationMessageFor(m => m.CommissionAmount, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.ReferenceNo)
+                        @Html.TextBoxFor(m => m.ReferenceNo, new { @class = "form-control form-control-sm", placeholder = "Memo / Scheme Reference No" })
+                    </div>
+
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.Status)
+                        <select id="Status" name="Status" class="form-control form-control-sm">
+                            <option value="Posted" selected="@(Model.Status == "Posted")">Posted</option>
+                            <option value="Draft" selected="@(Model.Status == "Draft")">Draft</option>
+                            <option value="Cancelled" selected="@(Model.Status == "Cancelled")">Cancelled</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.Remarks)
+                        @Html.TextBoxFor(m => m.Remarks, new { @class = "form-control form-control-sm", placeholder = "Remarks" })
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <script src="~/js/CommonComboLoader.js"></script>
+    <script>
+        $(document).ready(function () {
+            LoadCombo("CustomerID", '/Common/GetCustomers');
+            var selCust = $('#CustomerID').attr('data-selected');
+            if (selCust && selCust > 0) {
+                $('#CustomerID').val(selCust);
+            }
+
+            $('#btnSaveComm').click(function () {
+                var form = $('#frmComm');
+                if (!form[0].checkValidity()) {
+                    form[0].reportValidity();
+                    return;
+                }
+
+                var model = {
+                    CustomerCommissionID: parseInt($('#CustomerCommissionID').val()) || 0,
+                    CustomerID: parseInt($('#CustomerID').val()),
+                    CommissionDate: $('#CommissionDate').val(),
+                    CommissionType: $('#CommissionType').val(),
+                    CommissionAmount: parseFloat($('#CommissionAmount').val()) || 0,
+                    ReferenceNo: $('#ReferenceNo').val(),
+                    Remarks: $('#Remarks').val(),
+                    Status: $('#Status').val(),
+                    Operation: $('#Operation').val()
+                };
+
+                $.ajax({
+                    url: '/CustomerCommission/CreateEdit',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(model),
+                    success: function (res) {
+                        if (res.status === "Success" || res.status === 200 || res.status === "200") {
+                            toastr.success(res.message);
+                            if ($('#Operation').val() === 'add' && res.data) {
+                                $('#CustomerCommissionID').val(res.data.customerCommissionID);
+                                $('#Operation').val('update');
+                                $('#btnSaveComm').html('<i class="fas fa-save mr-1"></i> Update').removeClass('sslSave').addClass('sslUpdate');
+                            }
+                        } else {
+                            toastr.error(res.message);
+                        }
+                    },
+                    error: function () {
+                        toastr.error("An error occurred while saving.");
+                    }
+                });
+            });
+        });
+    </script>
+}
+

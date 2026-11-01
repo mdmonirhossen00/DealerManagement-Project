@@ -1,0 +1,116 @@
+@model DealerManagement.Model.Entities.ProductColor
+@{
+    var isUpdate = Model.Operation == "update";
+    ViewData["Title"] = isUpdate ? "Edit Color" : "New Color";
+}
+
+@Html.Partial("_Header", new DealerManagement.Model.Common.HeaderModel()
+{
+    HeaderName = (isUpdate ? "Edit" : "Create") + " Color",
+    BreadCrums = new Dictionary<string, string>()
+    {
+        {"/ProductColor", "Product Color"},
+        {"", isUpdate ? "Edit" : "Create"}
+    }
+})
+
+<link href="~/css/button.css" rel="stylesheet" />
+
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header p-2">
+            <button type="button" class="button btnSave @(isUpdate ? "sslUpdate" : "sslSave")" id="btnSaveColor">
+                <i class="fas fa-save mr-1"></i> @(isUpdate ? "Update" : "Save")
+            </button>
+            <a href="/ProductColor/Index" class="btn btn-secondary btn-sm float-right ml-2">
+                <i class="fas fa-arrow-left mr-1"></i> Back to List
+            </a>
+            @if (isUpdate)
+            {
+                <a href="/ProductColor/Create" class="button NewButton addNewButton float-right">
+                    <i class="fas fa-plus mr-1"></i> New
+                </a>
+            }
+        </div>
+    </div>
+</div>
+
+<form id="frmColor">
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.ProductColorID)
+    @Html.HiddenFor(m => m.Operation)
+
+    <div class="container-fluid">
+        <div class="card card-secondary">
+            <div class="card-header">
+                <h3 class="card-title">Color Details</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-5 form-group">
+                        @Html.LabelFor(m => m.ColorName) <span class="text-danger">*</span>
+                        @Html.TextBoxFor(m => m.ColorName, new { @class = "form-control form-control-sm", required = "required", placeholder = "e.g., Red, Royal Blue, White" })
+                        @Html.ValidationMessageFor(m => m.ColorName, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.ColorCode)
+                        @Html.TextBoxFor(m => m.ColorCode, new { @class = "form-control form-control-sm", placeholder = "e.g., #FF0000" })
+                    </div>
+
+                    <div class="col-md-3 form-group d-flex align-items-center mt-4">
+                        <div class="form-check">
+                            @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input", id = "IsActive" })
+                            <label class="form-check-label" for="IsActive">Is Active</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#btnSaveColor').click(function () {
+                var form = $('#frmColor');
+                if (!form[0].checkValidity()) {
+                    form[0].reportValidity();
+                    return;
+                }
+
+                var model = {
+                    ProductColorID: parseInt($('#ProductColorID').val()) || 0,
+                    ColorName: $('#ColorName').val(),
+                    ColorCode: $('#ColorCode').val(),
+                    IsActive: $('#IsActive').is(':checked'),
+                    Operation: $('#Operation').val()
+                };
+
+                $.ajax({
+                    url: '/ProductColor/CreateEdit',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(model),
+                    success: function (res) {
+                        if (res.status === "Success" || res.status === 200 || res.status === "200") {
+                            toastr.success(res.message);
+                            if ($('#Operation').val() === 'add' && res.data) {
+                                $('#ProductColorID').val(res.data.productColorID);
+                                $('#Operation').val('update');
+                                $('#btnSaveColor').html('<i class="fas fa-save mr-1"></i> Update').removeClass('sslSave').addClass('sslUpdate');
+                            }
+                        } else {
+                            toastr.error(res.message);
+                        }
+                    },
+                    error: function () {
+                        toastr.error("An error occurred while saving.");
+                    }
+                });
+            });
+        });
+    </script>
+}
+

@@ -1,0 +1,142 @@
+@{
+    ViewData["Title"] = "Sample Delivery";
+}
+
+@Html.Partial("_Header", new DealerManagement.Model.Common.HeaderModel()
+{
+    HeaderName = "Sample Delivery List",
+    BreadCrums = new Dictionary<string, string>()
+    {
+        {"/SampleDelivery", "Sample Delivery"},
+        {"", "List"}
+    }
+})
+
+<link href="~/css/button.css" rel="stylesheet" />
+
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header p-2">
+            <a href="/SampleDelivery/Create" class="button NewButton addNewButton">
+                <i class="fas fa-plus"></i> New Sample Delivery
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <div class="card card-secondary">
+        <div class="card-header">
+            <h3 class="card-title">List Of Sample Deliveries</h3>
+        </div>
+        <div class="card-body">
+            <div id="SampleGrid"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            var gridDataSource = new kendo.data.DataSource({
+                type: "json",
+                serverPaging: true,
+                serverSorting: true,
+                serverFiltering: true,
+                pageSize: 10,
+                transport: {
+                    read: {
+                        url: "/SampleDelivery/GetGridData",
+                        type: "POST",
+                        dataType: "json"
+                    }
+                },
+                schema: {
+                    data: "items",
+                    total: "totalCount",
+                    model: {
+                        id: "sampleDeliveryID",
+                        fields: {
+                            sampleDeliveryID: { type: "number" },
+                            sampleDeliveryNo: { type: "string" },
+                            customerName: { type: "string" },
+                            deliveryTo: { type: "string" },
+                            deliveryDate: { type: "date" },
+                            purpose: { type: "string" },
+                            status: { type: "string" }
+                        }
+                    }
+                }
+            });
+
+            $("#SampleGrid").kendoGrid({
+                dataSource: gridDataSource,
+                pageable: {
+                    refresh: true,
+                    pageSizes: [10, 20, 50, "all"],
+                    buttonCount: 5
+                },
+                sortable: true,
+                filterable: true,
+                columns: [
+                    {
+                        title: "Action",
+                        width: "110px",
+                        template: function (dataItem) {
+                            return `<a href='/SampleDelivery/Edit/${dataItem.sampleDeliveryID}' class='btn btn-primary btn-sm mr-1' title='Edit'>
+                                        <i class='fas fa-pencil-alt'></i>
+                                    </a>
+                                    <button type='button' class='btn btn-danger btn-sm' onclick='deleteSample(${dataItem.sampleDeliveryID})' title='Delete'>
+                                        <i class='fas fa-trash'></i>
+                                    </button>`;
+                        }
+                    },
+                    { field: "sampleDeliveryNo", title: "Sample No", width: "160px" },
+                    { field: "customerName", title: "Dealer / Client", width: "190px" },
+                    { field: "deliveryTo", title: "Recipient / Person", width: "170px" },
+                    { 
+                        field: "deliveryDate", 
+                        title: "Delivery Date", 
+                        width: "120px",
+                        template: "#= deliveryDate ? kendo.toString(kendo.parseDate(deliveryDate), 'yyyy-MM-dd') : '' #"
+                    },
+                    { field: "purpose", title: "Purpose", width: "200px" },
+                    {
+                        field: "status",
+                        title: "Status",
+                        width: "120px",
+                        template: function (dataItem) {
+                            var badge = "secondary";
+                            if (dataItem.status === "Approved") badge = "info";
+                            else if (dataItem.status === "Delivered") badge = "success";
+                            else if (dataItem.status === "Returned") badge = "primary";
+                            else if (dataItem.status === "Cancelled") badge = "danger";
+                            return `<span class='badge badge-${badge}'>${dataItem.status}</span>`;
+                        }
+                    }
+                ]
+            });
+        });
+
+        function deleteSample(id) {
+            if (confirm("Are you sure you want to delete this Sample Delivery?")) {
+                $.ajax({
+                    url: '/SampleDelivery/Delete/' + id,
+                    type: 'POST',
+                    success: function (res) {
+                        if (res.status === "Success" || res.status === 200 || res.status === "200") {
+                            toastr.success(res.message);
+                            $('#SampleGrid').data('kendoGrid').dataSource.read();
+                        } else {
+                            toastr.error(res.message);
+                        }
+                    },
+                    error: function () {
+                        toastr.error("An error occurred while deleting.");
+                    }
+                });
+            }
+        }
+    </script>
+}
+

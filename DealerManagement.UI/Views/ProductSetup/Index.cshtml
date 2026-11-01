@@ -1,0 +1,142 @@
+@{
+    ViewData["Title"] = "Product Setup";
+}
+
+@Html.Partial("_Header", new DealerManagement.Model.Common.HeaderModel()
+{
+    HeaderName = "Product Setup List",
+    BreadCrums = new Dictionary<string, string>()
+    {
+        {"/ProductSetup", "Product Setup"},
+        {"", "List"}
+    }
+})
+
+<link href="~/css/button.css" rel="stylesheet" />
+
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header p-2">
+            <a href="/ProductSetup/Create" class="button NewButton addNewButton">
+                <i class="fas fa-plus"></i> New Product
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <div class="card card-secondary">
+        <div class="card-header">
+            <h3 class="card-title">List Of Products</h3>
+        </div>
+        <div class="card-body">
+            <div id="ProductSetupGrid"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            var gridDataSource = new kendo.data.DataSource({
+                type: "json",
+                serverPaging: true,
+                serverSorting: true,
+                serverFiltering: true,
+                pageSize: 10,
+                transport: {
+                    read: {
+                        url: "/ProductSetup/GetGridData",
+                        type: "POST",
+                        dataType: "json"
+                    }
+                },
+                schema: {
+                    data: "items",
+                    total: "totalCount",
+                    model: {
+                        id: "productID",
+                        fields: {
+                            productID: { type: "number" },
+                            productCode: { type: "string" },
+                            productNameText: { type: "string" },
+                            categoryName: { type: "string" },
+                            sizeName: { type: "string" },
+                            colorName: { type: "string" },
+                            gradeName: { type: "string" },
+                            unitName: { type: "string" },
+                            barcode: { type: "string" },
+                            reorderLevel: { type: "number" },
+                            isActive: { type: "boolean" }
+                        }
+                    }
+                }
+            });
+
+            $("#ProductSetupGrid").kendoGrid({
+                dataSource: gridDataSource,
+                pageable: {
+                    refresh: true,
+                    pageSizes: [10, 20, 50, "all"],
+                    buttonCount: 5
+                },
+                sortable: true,
+                filterable: true,
+                columns: [
+                    {
+                        title: "Action",
+                        width: "110px",
+                        template: function (dataItem) {
+                            return `<a href='/ProductSetup/Edit/${dataItem.productID}' class='btn btn-primary btn-sm mr-1' title='Edit'>
+                                        <i class='fas fa-pencil-alt'></i>
+                                    </a>
+                                    <button type='button' class='btn btn-danger btn-sm' onclick='deleteProduct(${dataItem.productID})' title='Delete'>
+                                        <i class='fas fa-trash'></i>
+                                    </button>`;
+                        }
+                    },
+                    { field: "productCode", title: "Product Code", width: "130px" },
+                    { field: "productNameText", title: "Product Name", width: "200px" },
+                    { field: "categoryName", title: "Category", width: "140px" },
+                    { field: "sizeName", title: "Size", width: "100px" },
+                    { field: "colorName", title: "Color", width: "100px" },
+                    { field: "gradeName", title: "Grade", width: "100px" },
+                    { field: "unitName", title: "Unit", width: "80px" },
+                    { field: "barcode", title: "Barcode", width: "120px" },
+                    { field: "reorderLevel", title: "Reorder Lvl", width: "110px" },
+                    {
+                        field: "isActive",
+                        title: "Status",
+                        width: "100px",
+                        template: function (dataItem) {
+                            return dataItem.isActive 
+                                ? "<span class='badge badge-success'>Active</span>" 
+                                : "<span class='badge badge-danger'>Inactive</span>";
+                        }
+                    }
+                ]
+            });
+        });
+
+        function deleteProduct(id) {
+            if (confirm("Are you sure you want to delete this Product?")) {
+                $.ajax({
+                    url: '/ProductSetup/Delete/' + id,
+                    type: 'POST',
+                    success: function (res) {
+                        if (res.status === "Success" || res.status === 200 || res.status === "200") {
+                            toastr.success(res.message);
+                            $('#ProductSetupGrid').data('kendoGrid').dataSource.read();
+                        } else {
+                            toastr.error(res.message);
+                        }
+                    },
+                    error: function () {
+                        toastr.error("An error occurred while deleting.");
+                    }
+                });
+            }
+        }
+    </script>
+}
+

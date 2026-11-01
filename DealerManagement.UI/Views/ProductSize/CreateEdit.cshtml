@@ -1,0 +1,116 @@
+@model DealerManagement.Model.Entities.ProductSize
+@{
+    var isUpdate = Model.Operation == "update";
+    ViewData["Title"] = isUpdate ? "Edit Size" : "New Size";
+}
+
+@Html.Partial("_Header", new DealerManagement.Model.Common.HeaderModel()
+{
+    HeaderName = (isUpdate ? "Edit" : "Create") + " Size",
+    BreadCrums = new Dictionary<string, string>()
+    {
+        {"/ProductSize", "Product Size"},
+        {"", isUpdate ? "Edit" : "Create"}
+    }
+})
+
+<link href="~/css/button.css" rel="stylesheet" />
+
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header p-2">
+            <button type="button" class="button btnSave @(isUpdate ? "sslUpdate" : "sslSave")" id="btnSaveSize">
+                <i class="fas fa-save mr-1"></i> @(isUpdate ? "Update" : "Save")
+            </button>
+            <a href="/ProductSize/Index" class="btn btn-secondary btn-sm float-right ml-2">
+                <i class="fas fa-arrow-left mr-1"></i> Back to List
+            </a>
+            @if (isUpdate)
+            {
+                <a href="/ProductSize/Create" class="button NewButton addNewButton float-right">
+                    <i class="fas fa-plus mr-1"></i> New
+                </a>
+            }
+        </div>
+    </div>
+</div>
+
+<form id="frmSize">
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.ProductSizeID)
+    @Html.HiddenFor(m => m.Operation)
+
+    <div class="container-fluid">
+        <div class="card card-secondary">
+            <div class="card-header">
+                <h3 class="card-title">Size Details</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-5 form-group">
+                        @Html.LabelFor(m => m.SizeName) <span class="text-danger">*</span>
+                        @Html.TextBoxFor(m => m.SizeName, new { @class = "form-control form-control-sm", required = "required", placeholder = "e.g., Small, Medium, Large, 500ml, 1L" })
+                        @Html.ValidationMessageFor(m => m.SizeName, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.SortOrder)
+                        @Html.TextBoxFor(m => m.SortOrder, new { @class = "form-control form-control-sm", type = "number", min = "0" })
+                    </div>
+
+                    <div class="col-md-3 form-group d-flex align-items-center mt-4">
+                        <div class="form-check">
+                            @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input", id = "IsActive" })
+                            <label class="form-check-label" for="IsActive">Is Active</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#btnSaveSize').click(function () {
+                var form = $('#frmSize');
+                if (!form[0].checkValidity()) {
+                    form[0].reportValidity();
+                    return;
+                }
+
+                var model = {
+                    ProductSizeID: parseInt($('#ProductSizeID').val()) || 0,
+                    SizeName: $('#SizeName').val(),
+                    SortOrder: parseInt($('#SortOrder').val()) || 0,
+                    IsActive: $('#IsActive').is(':checked'),
+                    Operation: $('#Operation').val()
+                };
+
+                $.ajax({
+                    url: '/ProductSize/CreateEdit',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(model),
+                    success: function (res) {
+                        if (res.status === "Success" || res.status === 200 || res.status === "200") {
+                            toastr.success(res.message);
+                            if ($('#Operation').val() === 'add' && res.data) {
+                                $('#ProductSizeID').val(res.data.productSizeID);
+                                $('#Operation').val('update');
+                                $('#btnSaveSize').html('<i class="fas fa-save mr-1"></i> Update').removeClass('sslSave').addClass('sslUpdate');
+                            }
+                        } else {
+                            toastr.error(res.message);
+                        }
+                    },
+                    error: function () {
+                        toastr.error("An error occurred while saving.");
+                    }
+                });
+            });
+        });
+    </script>
+}
+

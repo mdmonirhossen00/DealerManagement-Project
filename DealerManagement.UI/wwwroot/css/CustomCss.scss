@@ -1,0 +1,16 @@
+﻿@import "AdminLte/CSS/adminlte.min";
+/*@import "bootstrap-reboot";*/
+
+/*@import "_buttons";
+@import "_reboot";
+@import "_spacing";*/
+
+
+
+.NewButton {
+    @extend.btn;
+    @extend.btn-success;
+    @extend.pt-1;
+}
+
+

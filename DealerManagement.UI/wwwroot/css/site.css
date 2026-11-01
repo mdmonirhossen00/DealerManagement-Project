@@ -1,0 +1,389 @@
+html {
+  font-size: 12px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+
+
+/*html {
+  position: relative;
+  min-height: 100%;
+}*/
+
+/*body {
+  margin-bottom: 60px;
+}*/
+
+.field-validation-error{
+    color:red;
+}
+
+.field-validation-error,
+label.error {
+    color: red;
+}
+
+.input-validation-error,
+input.error {
+    border: 2px solid red;
+}
+
+
+.modal-xl {
+    max-width: 1250px;
+}
+
+ul.myErrorClass, input.myErrorClass, textarea.myErrorClass, select.myErrorClass {
+    border-width: 1px !important;
+    border-style: solid !important;
+    border-color: #cc0000 !important;
+    background-color: #f3d8d8 !important;
+    background-image: url(http://goo.gl/GXVcmC) !important;
+    background-position: 50% 50% !important;
+    background-repeat: repeat !important;
+}
+
+ul.myErrorClass input {
+    color: #666 !important;
+}
+
+label.myErrorClass {
+    color: red;
+    font-size: 11px;
+    /*    font-style: italic;*/
+    display: block;
+}
+
+.input-group-text {
+    padding: .0rem .0rem;
+}
+
+
+i.material-icons {
+    cursor: pointer;
+}
+
+
+.input-group-text {
+    padding: 0.375rem 0.75rem !important;
+}
+form-control {
+    background-color: #fff !important
+}
+
+table.dataTable tbody th, table.dataTable tbody td {
+    padding: 5px;
+}
+
+.select2-selection__rendered {
+    line-height: 31px !important;
+}
+
+.select2-container .select2-selection--single {
+    height: 35px !important;
+    padding-top: 4px !important;
+}
+
+.select2-selection__arrow {
+    height: 34px !important;
+}
+
+.select2Font {
+    font-size: 14px;
+}
+
+
+textarea.form-control {
+    height: calc(1.8125rem + 2px);
+}
+
+div.dataTables_wrapper div.dataTables_length label {
+    font-weight: normal;
+    text-align: left;
+    white-space: nowrap;
+    float: left;
+}
+
+div.dataTables_wrapper div.dataTables_filter {
+    margin-left: 0.5em;
+    display: inline-block;
+    width: auto;
+    float: right;
+}
+div.dt-buttons {
+    left: 50px;
+    position: relative;
+}
+.addNewButton {   
+    color: #f8f9fa;
+    background-color: #17a2b8 !important;
+    border-color: #17a2b8;
+    box-shadow: none;
+    padding: 0.5rem 1rem;
+    font-size: 1.25rem;
+    line-height: 1.5;
+    border-radius: 0.3rem;
+    display: inline-block;
+    font-weight: 400;
+    text-align: center;
+    vertical-align: middle;
+    user-select: none;
+    background-color: transparent;
+    border: 1px solid transparent;
+    padding-top: 0.25rem !important;
+    padding: 0.375rem 0.75rem;
+}
+.editIcon {
+    /*  color: red;  working good */
+    color: #007bff;
+    text-decoration: none;
+    background-color: transparent;
+    font-family: 'Material Icons';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
+}
+.deleteIcon {
+    /*  color: red;  working good */
+    color: red;
+    text-decoration: none;
+    background-color: transparent;
+    font-family: 'Material Icons';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
+}
+
+.saveButton {
+    color: #f8f9fa;
+    background-color: #17a2b8 !important;
+    border-color: #17a2b8;
+    box-shadow: none;
+    padding: 0.5rem 1rem;
+    font-size: 1.25rem;
+    line-height: 1.5;
+    border-radius: 0.3rem;
+    display: inline-block;
+    font-weight: 400;
+    text-align: center;
+    vertical-align: middle;
+    user-select: none;
+    background-color: transparent;
+    border: 1px solid transparent;
+    padding-top: 0.25rem !important;
+    padding: 0.375rem 0.75rem;
+}
+/* Adjust the size and spacing of the elements */
+.edit {
+    margin-right: 5px; /* Add space between the edit button and radio button */
+}
+
+.dSelected {
+    margin-left: 5px; /* Add space between the radio button and edit button */
+}
+.updateButton {
+    color: #f8f9fa;
+    background-color: #17a2b8 !important;
+    border-color: #17a2b8;
+    box-shadow: none;
+    padding: 0.5rem 1rem;
+    font-size: 1.25rem;
+    line-height: 1.5;
+    border-radius: 0.3rem;
+    display: inline-block;
+    font-weight: 400;
+    text-align: center;
+    vertical-align: middle;
+    user-select: none;
+    background-color: transparent;
+    border: 1px solid transparent;
+    padding-top: 0.25rem !important;
+    padding: 0.375rem 0.75rem;
+    content: "\e065";
+}
+    .updateButton:before {
+        content: "\e065";
+    }
+
+.rowActive {
+    color: #fff;
+    background-color: #28a745;
+    border-radius: 50rem !important;
+    padding: 0.25em 0.4em;
+    font-size: 75%;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    transition: color .15s
+}
+.rowInActive {
+    color: #fff;
+    background-color: #dc3545;
+    border-radius: 50rem !important;
+    padding: 0.25em 0.4em;
+    font-size: 75%;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    transition: color .15s
+}
+
+
+
+.cursorHand {
+    cursor: pointer;
+}
+
+.input-error {
+    border-color: #dc3545 !important;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+}
+
+
+.filter-input {
+    display: block;
+    width: auto;
+    padding: .375rem .45rem;
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #495057;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid #ced4da;
+    border-radius: .25rem;
+    transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+}
+
+
+    .filter-input:focus {
+        color: #495057;
+        background-color: #fff;
+        border-color: #80bdff;
+        outline: 0;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+.full-width {
+    width: 100% !important;
+
+}
+
+[data-val-required], [data-val-required]:focus {
+    border-bottom: 2px solid red;
+}
+
+.Update {
+    background-color: green;
+    color: white;
+    border: none;  Optional: Remove the button border 
+    padding: 10px;  Optional: Adjust the button padding 
+
+}
+
+
+.Push {
+    background-color: #17a2b8;
+    color: #fff;
+    /*background-color: cadetblue;
+    color: white;*/
+    border: none; /* Optional: Remove the button border */
+    padding: 10px 20px; /* Optional: Adjust the button padding */
+}
+
+
+.Post {
+    background-color: #ffc107;
+    color: #fff;
+/*    background-color: orange;
+    color: white;*/
+    border: none; /* Optional: Remove the button border */
+    padding: 10px 20px; /* Optional: Adjust the button padding */
+}
+
+.Save {
+    background-color: green;
+    color: white;
+    border: none; /* Optional: Remove the button border */
+    padding: 10px 20px; /* Optional: Adjust the button padding */
+}
+
+.New {
+    background-color: #17a2b8;
+    color: #fff;
+    border: none; /* Optional: Remove the button border */
+    padding: 10px 20px; /* Optional: Adjust the button padding */
+}
+.search {
+/*    background-image: url('https://img.icons8.com/fluency-systems-filled/48/search.png');*/
+    background-image: url('ButtonsIcons/icons8-search-50 (1).png');
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 20px;
+    padding-right: 40px;
+}
+.excelButton {
+    background-color: green;
+    color: white;
+}
+
+.excelButton:hover {
+    filter: brightness(0.8);
+}
+
+
+@keyframes flickerModal {
+    0% {
+        transform: scale(0.5) rotate(-10deg);
+        opacity: 0;
+    }
+
+    50% {
+        transform: scale(1.1) rotate(5deg);
+        opacity: 1;
+    }
+
+    70% {
+        transform: scale(0.95) rotate(-2deg);
+    }
+
+    100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+}
+
+.modal.flicker .modal-dialog {
+    animation: flickerModal 0.5s ease-in-out;
+}
+
+
+
+

@@ -1,0 +1,159 @@
+@model DealerManagement.Model.Entities.SupplierCommission
+@{
+    var isUpdate = Model.Operation == "update";
+    ViewData["Title"] = isUpdate ? "Edit Supplier Rebate" : "New Supplier Rebate";
+}
+
+@Html.Partial("_Header", new DealerManagement.Model.Common.HeaderModel()
+{
+    HeaderName = (isUpdate ? "Edit" : "Record") + " Supplier Rebate / Commission",
+    BreadCrums = new Dictionary<string, string>()
+    {
+        {"/SupplierCommission", "Supplier Rebate"},
+        {"", isUpdate ? "Edit" : "Record"}
+    }
+})
+
+<link href="~/css/button.css" rel="stylesheet" />
+
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header p-2">
+            <button type="button" class="button btnSave @(isUpdate ? "sslUpdate" : "sslSave")" id="btnSaveComm">
+                <i class="fas fa-save mr-1"></i> @(isUpdate ? "Update" : "Save")
+            </button>
+            <a href="/SupplierCommission/Index" class="btn btn-secondary btn-sm float-right ml-2">
+                <i class="fas fa-arrow-left mr-1"></i> Back to List
+            </a>
+            @if (isUpdate)
+            {
+                <a href="/SupplierCommission/Create" class="button NewButton addNewButton float-right">
+                    <i class="fas fa-plus mr-1"></i> New
+                </a>
+            }
+        </div>
+    </div>
+</div>
+
+<form id="frmComm">
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.SupplierCommissionID)
+    @Html.HiddenFor(m => m.Operation)
+
+    <div class="container-fluid">
+        <div class="card card-secondary">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-percentage mr-1"></i> Rebate / Commission Information</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 form-group">
+                        <label>Supplier <span class="text-danger">*</span></label>
+                        <select id="SupplierID" name="SupplierID" class="form-control form-control-sm" data-selected="@Model.SupplierID" required>
+                            <option value="">----- Select Supplier -----</option>
+                        </select>
+                        @Html.ValidationMessageFor(m => m.SupplierID, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="col-md-3 form-group">
+                        @Html.LabelFor(m => m.CommissionDate) <span class="text-danger">*</span>
+                        <input type="date" id="CommissionDate" name="CommissionDate" class="form-control form-control-sm" value="@Model.CommissionDate.ToString("yyyy-MM-dd")" required />
+                    </div>
+
+                    <div class="col-md-3 form-group">
+                        @Html.LabelFor(m => m.CommissionType) <span class="text-danger">*</span>
+                        <select id="CommissionType" name="CommissionType" class="form-control form-control-sm">
+                            <option value="Purchase Rebate" selected="@(Model.CommissionType == "Purchase Rebate")">Purchase Rebate</option>
+                            <option value="Volume Discount" selected="@(Model.CommissionType == "Volume Discount")">Volume Discount</option>
+                            <option value="Yearly Commission" selected="@(Model.CommissionType == "Yearly Commission")">Yearly Commission</option>
+                            <option value="Early Payment Discount" selected="@(Model.CommissionType == "Early Payment Discount")">Early Payment Discount</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3 form-group">
+                        @Html.LabelFor(m => m.CommissionAmount) <span class="text-danger">*</span>
+                        @Html.TextBoxFor(m => m.CommissionAmount, new { @class = "form-control form-control-sm text-right", type = "number", step = "any", min = "0", required = "required" })
+                        @Html.ValidationMessageFor(m => m.CommissionAmount, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.ReferenceNo)
+                        @Html.TextBoxFor(m => m.ReferenceNo, new { @class = "form-control form-control-sm", placeholder = "Debit Note / Voucher Ref No" })
+                    </div>
+
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.Status)
+                        <select id="Status" name="Status" class="form-control form-control-sm">
+                            <option value="Posted" selected="@(Model.Status == "Posted")">Posted</option>
+                            <option value="Draft" selected="@(Model.Status == "Draft")">Draft</option>
+                            <option value="Cancelled" selected="@(Model.Status == "Cancelled")">Cancelled</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.Remarks)
+                        @Html.TextBoxFor(m => m.Remarks, new { @class = "form-control form-control-sm", placeholder = "Remarks" })
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <script src="~/js/CommonComboLoader.js"></script>
+    <script>
+        $(document).ready(function () {
+            LoadCombo("SupplierID", '/Common/GetSuppliers');
+            var selSupp = $('#SupplierID').attr('data-selected');
+            if (selSupp && selSupp > 0) {
+                $('#SupplierID').val(selSupp);
+            }
+
+            $('#btnSaveComm').click(function () {
+                var form = $('#frmComm');
+                if (!form[0].checkValidity()) {
+                    form[0].reportValidity();
+                    return;
+                }
+
+                var model = {
+                    SupplierCommissionID: parseInt($('#SupplierCommissionID').val()) || 0,
+                    SupplierID: parseInt($('#SupplierID').val()),
+                    CommissionDate: $('#CommissionDate').val(),
+                    CommissionType: $('#CommissionType').val(),
+                    CommissionAmount: parseFloat($('#CommissionAmount').val()) || 0,
+                    ReferenceNo: $('#ReferenceNo').val(),
+                    Remarks: $('#Remarks').val(),
+                    Status: $('#Status').val(),
+                    Operation: $('#Operation').val()
+                };
+
+                $.ajax({
+                    url: '/SupplierCommission/CreateEdit',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(model),
+                    success: function (res) {
+                        if (res.status === "Success" || res.status === 200 || res.status === "200") {
+                            toastr.success(res.message);
+                            if ($('#Operation').val() === 'add' && res.data) {
+                                $('#SupplierCommissionID').val(res.data.supplierCommissionID);
+                                $('#Operation').val('update');
+                                $('#btnSaveComm').html('<i class="fas fa-save mr-1"></i> Update').removeClass('sslSave').addClass('sslUpdate');
+                            }
+                        } else {
+                            toastr.error(res.message);
+                        }
+                    },
+                    error: function () {
+                        toastr.error("An error occurred while saving.");
+                    }
+                });
+            });
+        });
+    </script>
+}
+

@@ -1,0 +1,22 @@
+﻿@media print {    
+    .no-print, .no-print *, .pace-activity {
+        display: none !important;
+    }
+    .inner-report{
+        display: block;
+    }
+
+    body {
+        width: 100% !important;
+    }
+
+    .container {
+        width: 100% !important;
+    }
+
+    .content-wrapper {
+        margin-right: 0px !important;
+    }
+
+}
+	

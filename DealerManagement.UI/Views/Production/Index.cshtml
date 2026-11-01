@@ -1,0 +1,146 @@
+@{
+    ViewData["Title"] = "Production Entry";
+}
+
+@Html.Partial("_Header", new DealerManagement.Model.Common.HeaderModel()
+{
+    HeaderName = "Production Entry List",
+    BreadCrums = new Dictionary<string, string>()
+    {
+        {"/Production", "Production"},
+        {"", "List"}
+    }
+})
+
+<link href="~/css/button.css" rel="stylesheet" />
+
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header p-2">
+            <a href="/Production/Create" class="button NewButton addNewButton">
+                <i class="fas fa-plus"></i> New Production Entry
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <div class="card card-secondary">
+        <div class="card-header">
+            <h3 class="card-title">List Of Production Entries</h3>
+        </div>
+        <div class="card-body">
+            <div id="ProductionGrid"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            var gridDataSource = new kendo.data.DataSource({
+                type: "json",
+                serverPaging: true,
+                serverSorting: true,
+                serverFiltering: true,
+                pageSize: 10,
+                transport: {
+                    read: {
+                        url: "/Production/GetGridData",
+                        type: "POST",
+                        dataType: "json"
+                    }
+                },
+                schema: {
+                    data: "items",
+                    total: "totalCount",
+                    model: {
+                        id: "productionID",
+                        fields: {
+                            productionID: { type: "number" },
+                            productionNo: { type: "string" },
+                            productionDate: { type: "date" },
+                            totalQuantity: { type: "number" },
+                            remarks: { type: "string" },
+                            createdBy: { type: "string" },
+                            status: { type: "string" }
+                        }
+                    }
+                }
+            });
+
+            $("#ProductionGrid").kendoGrid({
+                dataSource: gridDataSource,
+                pageable: {
+                    refresh: true,
+                    pageSizes: [10, 20, 50, "all"],
+                    buttonCount: 5
+                },
+                sortable: true,
+                filterable: true,
+                columns: [
+                    {
+                        title: "Action",
+                        width: "110px",
+                        template: function (dataItem) {
+                            return `<a href='/Production/Edit/${dataItem.productionID}' class='btn btn-primary btn-sm mr-1' title='Edit'>
+                                        <i class='fas fa-pencil-alt'></i>
+                                    </a>
+                                    <button type='button' class='btn btn-danger btn-sm' onclick='deleteProduction(${dataItem.productionID})' title='Delete'>
+                                        <i class='fas fa-trash'></i>
+                                    </button>`;
+                        }
+                    },
+                    { field: "productionNo", title: "Production Batch No", width: "180px" },
+                    { 
+                        field: "productionDate", 
+                        title: "Production Date", 
+                        width: "140px",
+                        template: "#= productionDate ? kendo.toString(kendo.parseDate(productionDate), 'yyyy-MM-dd') : '' #"
+                    },
+                    { 
+                        field: "totalQuantity", 
+                        title: "Total Output Qty", 
+                        width: "160px",
+                        template: "#= kendo.toString(totalQuantity, 'n2') #"
+                    },
+                    { field: "createdBy", title: "Supervisor / Operator", width: "170px" },
+                    { field: "remarks", title: "Remarks", width: "220px" },
+                    {
+                        field: "status",
+                        title: "Status",
+                        width: "120px",
+                        template: function (dataItem) {
+                            var badge = "secondary";
+                            if (dataItem.status === "Posted") badge = "success";
+                            else if (dataItem.status === "Draft") badge = "info";
+                            else if (dataItem.status === "Cancelled") badge = "danger";
+                            return `<span class='badge badge-${badge}'>${dataItem.status}</span>`;
+                        }
+                    }
+                ]
+            });
+        });
+
+        function deleteProduction(id) {
+            if (confirm("Are you sure you want to delete this Production record?")) {
+                $.ajax({
+                    url: '/Production/Delete/' + id,
+                    type: 'POST',
+                    success: function (res) {
+                        if (res.status === "Success" || res.status === 200 || res.status === "200") {
+                            toastr.success(res.message);
+                            $('#ProductionGrid').data('kendoGrid').dataSource.read();
+                        } else {
+                            toastr.error(res.message);
+                        }
+                    },
+                    error: function () {
+                        toastr.error("An error occurred while deleting.");
+                    }
+                });
+            }
+        }
+    </script>
+}
+

@@ -1,0 +1,90 @@
+@model DealerManagement.Model.ViewModels.UserVM
+@{
+    ViewData["Title"] = "Edit User";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0 text-dark"><i class="fas fa-user-edit mr-2 text-primary"></i> Edit User</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="/Home/Index">Home</a></li>
+                    <li class="breadcrumb-item"><a href="/User/Index">Users</a></li>
+                    <li class="breadcrumb-item active">Edit</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8 col-md-10 mx-auto">
+        <div class="card card-outline card-primary shadow-sm">
+            <div class="card-header">
+                <h3 class="card-title font-weight-bold">Edit User Details</h3>
+            </div>
+            <form asp-action="Edit" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="UserID" />
+
+                <div class="card-body">
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger py-2 px-3 mb-3">
+                            <i class="fas fa-exclamation-triangle mr-1"></i>
+                            @Html.ValidationSummary(false, "")
+                        </div>
+                    }
+
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label asp-for="UserName">Username</label>
+                            <input asp-for="UserName" class="form-control" readonly />
+                            <small class="form-text text-muted">Username cannot be changed.</small>
+                        </div>
+
+                        <div class="col-md-6 form-group">
+                            <label asp-for="FullName">Full Name <span class="text-danger">*</span></label>
+                            <input asp-for="FullName" class="form-control" placeholder="e.g. John Doe" required />
+                            <span asp-validation-for="FullName" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label asp-for="Email">Email</label>
+                            <input asp-for="Email" type="email" class="form-control" placeholder="e.g. user@example.com" />
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6 form-group">
+                            <label asp-for="PhoneNumber">Phone Number</label>
+                            <input asp-for="PhoneNumber" class="form-control" placeholder="e.g. 01700000000" />
+                            <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" asp-for="IsActive" class="custom-control-input" id="isActiveSwitch">
+                            <label class="custom-control-label" for="isActiveSwitch">Active Account</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-footer bg-light d-flex justify-content-between">
+                    <a href="/User/Index" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-arrow-left mr-1"></i> Back to List
+                    </a>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fas fa-save mr-1"></i> Update User
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+

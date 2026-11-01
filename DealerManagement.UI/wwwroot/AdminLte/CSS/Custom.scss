@@ -1,0 +1,48 @@
+﻿
+@import "adminlte.min";
+@import "MaterialIcons";
+@import "/css//site.css";
+
+.NewButton {
+    @extend.btn;
+    @extend.btn-success;
+    @extend.pt-1;
+}
+
+.updateButton {
+    @extend.btn;
+    @extend.btn-success;
+    @extend.pt-1;
+}
+.saveButton {
+    @extend.btn;
+    @extend.btn-info;
+    @extend.pt-1;
+}
+.searchButton {
+    @extend.btn;
+    @extend.btn-info;
+    @extend.pt-1;
+}
+/*.searchButtonIcon {
+    @extend.fa fa-search;
+  
+}*/
+.rowEdit {
+    @extend.material-icons
+}
+.rowDelete {
+    @extend.material-icons_delete
+}
+.rowActive {
+    @extend.rowActive
+}
+.rowInActive {
+    @extend.rowInActive
+}
+.excelButton {
+    @extend.btn;
+    @extend.btn-info;
+    @extend.pt-1;
+}
+

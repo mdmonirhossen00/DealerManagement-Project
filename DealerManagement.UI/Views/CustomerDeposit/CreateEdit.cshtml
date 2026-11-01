@@ -1,0 +1,166 @@
+@model DealerManagement.Model.Entities.CustomerDeposit
+@{
+    var isUpdate = Model.Operation == "update";
+    ViewData["Title"] = isUpdate ? "Edit Dealer Deposit" : "New Dealer Deposit";
+}
+
+@Html.Partial("_Header", new DealerManagement.Model.Common.HeaderModel()
+{
+    HeaderName = (isUpdate ? "Edit" : "Record") + " Dealer Deposit",
+    BreadCrums = new Dictionary<string, string>()
+    {
+        {"/CustomerDeposit", "Dealer Deposit"},
+        {"", isUpdate ? "Edit" : "Record"}
+    }
+})
+
+<link href="~/css/button.css" rel="stylesheet" />
+
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header p-2">
+            <button type="button" class="button btnSave @(isUpdate ? "sslUpdate" : "sslSave")" id="btnSaveDeposit">
+                <i class="fas fa-save mr-1"></i> @(isUpdate ? "Update" : "Save")
+            </button>
+            <a href="/CustomerDeposit/Index" class="btn btn-secondary btn-sm float-right ml-2">
+                <i class="fas fa-arrow-left mr-1"></i> Back to List
+            </a>
+            @if (isUpdate)
+            {
+                <a href="/CustomerDeposit/Create" class="button NewButton addNewButton float-right">
+                    <i class="fas fa-plus mr-1"></i> New
+                </a>
+            }
+        </div>
+    </div>
+</div>
+
+<form id="frmDeposit">
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.CustomerDepositID)
+    @Html.HiddenFor(m => m.Operation)
+
+    <div class="container-fluid">
+        <div class="card card-secondary">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-money-check-alt mr-1"></i> Deposit Information</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 form-group">
+                        @Html.LabelFor(m => m.DepositNo) <span class="text-danger">*</span>
+                        @Html.TextBoxFor(m => m.DepositNo, new { @class = "form-control form-control-sm", required = "required" })
+                        @Html.ValidationMessageFor(m => m.DepositNo, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="col-md-3 form-group">
+                        <label>Customer / Dealer <span class="text-danger">*</span></label>
+                        <select id="CustomerID" name="CustomerID" class="form-control form-control-sm" data-selected="@Model.CustomerID" required>
+                            <option value="">----- Select Customer -----</option>
+                        </select>
+                        @Html.ValidationMessageFor(m => m.CustomerID, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="col-md-3 form-group">
+                        @Html.LabelFor(m => m.DepositDate) <span class="text-danger">*</span>
+                        <input type="date" id="DepositDate" name="DepositDate" class="form-control form-control-sm" value="@Model.DepositDate.ToString("yyyy-MM-dd")" required />
+                    </div>
+
+                    <div class="col-md-3 form-group">
+                        @Html.LabelFor(m => m.Amount) <span class="text-danger">*</span>
+                        @Html.TextBoxFor(m => m.Amount, new { @class = "form-control form-control-sm text-right", type = "number", step = "any", min = "0.01", required = "required" })
+                        @Html.ValidationMessageFor(m => m.Amount, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 form-group">
+                        @Html.LabelFor(m => m.PaymentMethod)
+                        <select id="PaymentMethod" name="PaymentMethod" class="form-control form-control-sm">
+                            <option value="Cash" selected="@(Model.PaymentMethod == "Cash")">Cash</option>
+                            <option value="Bank" selected="@(Model.PaymentMethod == "Bank")">Bank Transfer</option>
+                            <option value="Cheque" selected="@(Model.PaymentMethod == "Cheque")">Cheque</option>
+                            <option value="MFS" selected="@(Model.PaymentMethod == "MFS")">MFS (bKash/Nagad/Rocket)</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3 form-group">
+                        @Html.LabelFor(m => m.ReferenceNo)
+                        @Html.TextBoxFor(m => m.ReferenceNo, new { @class = "form-control form-control-sm", placeholder = "Cheque No / Trx ID / Bank Slip" })
+                    </div>
+
+                    <div class="col-md-3 form-group">
+                        @Html.LabelFor(m => m.Status)
+                        <select id="Status" name="Status" class="form-control form-control-sm">
+                            <option value="Posted" selected="@(Model.Status == "Posted")">Posted</option>
+                            <option value="Draft" selected="@(Model.Status == "Draft")">Draft</option>
+                            <option value="Cancelled" selected="@(Model.Status == "Cancelled")">Cancelled</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3 form-group">
+                        @Html.LabelFor(m => m.Remarks)
+                        @Html.TextBoxFor(m => m.Remarks, new { @class = "form-control form-control-sm", placeholder = "Collection remarks" })
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <script src="~/js/CommonComboLoader.js"></script>
+    <script>
+        $(document).ready(function () {
+            LoadCombo("CustomerID", '/Common/GetCustomers');
+            var selCust = $('#CustomerID').attr('data-selected');
+            if (selCust && selCust > 0) {
+                $('#CustomerID').val(selCust);
+            }
+
+            $('#btnSaveDeposit').click(function () {
+                var form = $('#frmDeposit');
+                if (!form[0].checkValidity()) {
+                    form[0].reportValidity();
+                    return;
+                }
+
+                var model = {
+                    CustomerDepositID: parseInt($('#CustomerDepositID').val()) || 0,
+                    DepositNo: $('#DepositNo').val(),
+                    CustomerID: parseInt($('#CustomerID').val()),
+                    DepositDate: $('#DepositDate').val(),
+                    Amount: parseFloat($('#Amount').val()) || 0,
+                    PaymentMethod: $('#PaymentMethod').val(),
+                    ReferenceNo: $('#ReferenceNo').val(),
+                    Remarks: $('#Remarks').val(),
+                    Status: $('#Status').val(),
+                    Operation: $('#Operation').val()
+                };
+
+                $.ajax({
+                    url: '/CustomerDeposit/CreateEdit',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(model),
+                    success: function (res) {
+                        if (res.status === "Success" || res.status === 200 || res.status === "200") {
+                            toastr.success(res.message);
+                            if ($('#Operation').val() === 'add' && res.data) {
+                                $('#CustomerDepositID').val(res.data.customerDepositID);
+                                $('#Operation').val('update');
+                                $('#btnSaveDeposit').html('<i class="fas fa-save mr-1"></i> Update').removeClass('sslSave').addClass('sslUpdate');
+                            }
+                        } else {
+                            toastr.error(res.message);
+                        }
+                    },
+                    error: function () {
+                        toastr.error("An error occurred while saving.");
+                    }
+                });
+            });
+        });
+    </script>
+}
+

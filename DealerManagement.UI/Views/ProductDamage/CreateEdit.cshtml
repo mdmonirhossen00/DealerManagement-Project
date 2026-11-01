@@ -1,0 +1,337 @@
+@model DealerManagement.Model.Entities.ProductDamageMaster
+@{
+    var isUpdate = Model.Operation == "update";
+    ViewData["Title"] = isUpdate ? "Edit Damage / Loss Report" : "New Damage / Loss Report";
+}
+
+@Html.Partial("_Header", new DealerManagement.Model.Common.HeaderModel()
+{
+    HeaderName = (isUpdate ? "Edit" : "Create") + " Damage / Loss Report",
+    BreadCrums = new Dictionary<string, string>()
+    {
+        {"/ProductDamage", "Damage & Missing"},
+        {"", isUpdate ? "Edit" : "Create"}
+    }
+})
+
+<link href="~/css/button.css" rel="stylesheet" />
+
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header p-2">
+            <button type="button" class="button btnSave @(isUpdate ? "sslUpdate" : "sslSave")" id="btnSaveDamage">
+                <i class="fas fa-save mr-1"></i> @(isUpdate ? "Update" : "Save")
+            </button>
+            <a href="/ProductDamage/Index" class="btn btn-secondary btn-sm float-right ml-2">
+                <i class="fas fa-arrow-left mr-1"></i> Back to List
+            </a>
+            @if (isUpdate)
+            {
+                <a href="/ProductDamage/Create" class="button NewButton addNewButton float-right">
+                    <i class="fas fa-plus mr-1"></i> New
+                </a>
+            }
+        </div>
+    </div>
+</div>
+
+<form id="frmDamageMaster">
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.ProductDamageMasterID)
+    @Html.HiddenFor(m => m.Operation)
+
+    <div class="container-fluid">
+        <!-- Master Form Card -->
+        <div class="card card-secondary">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-exclamation-triangle mr-1"></i> Damage / Loss Report Master</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 form-group">
+                        @Html.LabelFor(m => m.DamageReportNo) <span class="text-danger">*</span>
+                        @Html.TextBoxFor(m => m.DamageReportNo, new { @class = "form-control form-control-sm", required = "required" })
+                        @Html.ValidationMessageFor(m => m.DamageReportNo, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="col-md-3 form-group">
+                        @Html.LabelFor(m => m.ReportDate) <span class="text-danger">*</span>
+                        <input type="date" id="ReportDate" name="ReportDate" class="form-control form-control-sm" value="@Model.ReportDate.ToString("yyyy-MM-dd")" required />
+                    </div>
+
+                    <div class="col-md-3 form-group">
+                        @Html.LabelFor(m => m.ReportType) <span class="text-danger">*</span>
+                        <select id="ReportType" name="ReportType" class="form-control form-control-sm">
+                            <option value="Damaged" selected="@(Model.ReportType == "Damaged")">Damaged</option>
+                            <option value="Broken" selected="@(Model.ReportType == "Broken")">Broken</option>
+                            <option value="Missing" selected="@(Model.ReportType == "Missing")">Missing</option>
+                            <option value="Expired" selected="@(Model.ReportType == "Expired")">Expired</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3 form-group">
+                        @Html.LabelFor(m => m.LocationName)
+                        @Html.TextBoxFor(m => m.LocationName, new { @class = "form-control form-control-sm", placeholder = "Warehouse / Godown" })
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 form-group">
+                        @Html.LabelFor(m => m.ReportedBy)
+                        @Html.TextBoxFor(m => m.ReportedBy, new { @class = "form-control form-control-sm", placeholder = "Inspector / Officer" })
+                    </div>
+
+                    <div class="col-md-3 form-group">
+                        @Html.LabelFor(m => m.Status)
+                        <select id="Status" name="Status" class="form-control form-control-sm">
+                            <option value="Draft" selected="@(Model.Status == "Draft")">Draft</option>
+                            <option value="Approved" selected="@(Model.Status == "Approved")">Approved</option>
+                            <option value="Cancelled" selected="@(Model.Status == "Cancelled")">Cancelled</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6 form-group">
+                        @Html.LabelFor(m => m.Remarks)
+                        @Html.TextBoxFor(m => m.Remarks, new { @class = "form-control form-control-sm", placeholder = "Report notes / investigation findings" })
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Details Section Card -->
+        <div class="card card-secondary">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h3 class="card-title"><i class="fas fa-boxes mr-1"></i> Damaged / Lost Items</h3>
+                <button type="button" id="btnAddRow" class="btn btn-success btn-sm float-right">
+                    <i class="fas fa-plus mr-1"></i> Add Item
+                </button>
+            </div>
+            <div class="card-body p-0 table-responsive">
+                <table class="table table-bordered table-striped table-sm mb-0" id="tblDamageDetails">
+                    <thead class="bg-light">
+                        <tr>
+                            <th style="width: 40%;">Product / Item <span class="text-danger">*</span></th>
+                            <th style="width: 15%; text-align: right;">Quantity <span class="text-danger">*</span></th>
+                            <th style="width: 15%; text-align: right;">Estimated Loss (Tk)</th>
+                            <th style="width: 25%;">Specific Reason / Cause</th>
+                            <th style="width: 5%; text-align: center;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tblDamageDetailsBody">
+                        @if (Model.DetailsList != null && Model.DetailsList.Any())
+                        {
+                            foreach (var line in Model.DetailsList)
+                            {
+                                <tr class="item-row">
+                                    <td>
+                                        <select class="form-control form-control-sm ddlProduct" required data-selected="@line.ProductID">
+                                            <option value="">----- Select Product -----</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="number" step="any" min="0.001" class="form-control form-control-sm text-right txtQty" value="@line.Quantity" required />
+                                    </td>
+                                    <td>
+                                        <input type="number" step="any" min="0" class="form-control form-control-sm text-right txtLoss" value="@line.EstimatedLoss" />
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm txtItemReason" value="@line.Reason" placeholder="Cause / Reason" />
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-danger btn-sm btnRemoveRow" title="Remove"><i class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                    <tfoot class="bg-light font-weight-bold">
+                        <tr>
+                            <td class="text-right">Total:</td>
+                            <td class="text-right"><span id="lblTotalQty">0.00</span></td>
+                            <td class="text-right"><span id="lblTotalLoss">0.00</span></td>
+                            <td colspan="2"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        var productListOptions = [];
+
+        $(document).ready(function () {
+            // Cache products list
+            $.ajax({
+                url: '/Common/GetProducts',
+                type: 'GET',
+                async: false,
+                success: function (data) {
+                    productListOptions = data;
+                }
+            });
+
+            $('#tblDamageDetailsBody tr').each(function () {
+                var ddl = $(this).find('.ddlProduct');
+                populateProductDropdown(ddl);
+                var sel = ddl.attr('data-selected');
+                if (sel && sel > 0) {
+                    ddl.val(sel);
+                }
+            });
+
+            if ($('#tblDamageDetailsBody tr').length === 0) {
+                addNewRow();
+            }
+
+            calculateTotals();
+
+            $('#btnAddRow').click(function () {
+                addNewRow();
+            });
+
+            $(document).on('click', '.btnRemoveRow', function () {
+                if ($('#tblDamageDetailsBody tr').length > 1) {
+                    $(this).closest('tr').remove();
+                    calculateTotals();
+                } else {
+                    toastr.warning("At least one item line is required.");
+                }
+            });
+
+            $(document).on('input', '.txtQty, .txtLoss', function () {
+                calculateTotals();
+            });
+
+            // Save Master & Details
+            $('#btnSaveDamage').click(function () {
+                var form = $('#frmDamageMaster');
+                if (!form[0].checkValidity()) {
+                    form[0].reportValidity();
+                    return;
+                }
+
+                var details = [];
+                var isValid = true;
+
+                $('#tblDamageDetailsBody tr').each(function () {
+                    var prodId = $(this).find('.ddlProduct').val();
+                    var qty = parseFloat($(this).find('.txtQty').val()) || 0;
+                    var loss = parseFloat($(this).find('.txtLoss').val()) || 0;
+                    var rsn = $(this).find('.txtItemReason').val();
+
+                    if (!prodId || prodId <= 0) {
+                        toastr.error("Please select a product for all item rows.");
+                        isValid = false;
+                        return false;
+                    }
+
+                    if (qty <= 0) {
+                        toastr.error("Quantity must be greater than zero for all rows.");
+                        isValid = false;
+                        return false;
+                    }
+
+                    details.push({
+                        ProductID: parseInt(prodId),
+                        Quantity: qty,
+                        EstimatedLoss: loss,
+                        Reason: rsn
+                    });
+                });
+
+                if (!isValid) return;
+
+                if (details.length === 0) {
+                    toastr.error("Please add at least one item line.");
+                    return;
+                }
+
+                var masterData = {
+                    ProductDamageMasterID: parseInt($('#ProductDamageMasterID').val()) || 0,
+                    DamageReportNo: $('#DamageReportNo').val(),
+                    ReportDate: $('#ReportDate').val(),
+                    ReportType: $('#ReportType').val(),
+                    LocationName: $('#LocationName').val(),
+                    ReportedBy: $('#ReportedBy').val(),
+                    Remarks: $('#Remarks').val(),
+                    Status: $('#Status').val(),
+                    Operation: $('#Operation').val(),
+                    DetailsList: details
+                };
+
+                $.ajax({
+                    url: '/ProductDamage/CreateEdit',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(masterData),
+                    success: function (res) {
+                        if (res.status === "Success" || res.status === 200 || res.status === "200") {
+                            toastr.success(res.message);
+                            if ($('#Operation').val() === 'add' && res.data) {
+                                $('#ProductDamageMasterID').val(res.data.productDamageMasterID);
+                                $('#Operation').val('update');
+                                $('#btnSaveDamage').html('<i class="fas fa-save mr-1"></i> Update').removeClass('sslSave').addClass('sslUpdate');
+                            }
+                        } else {
+                            toastr.error(res.message);
+                        }
+                    },
+                    error: function () {
+                        toastr.error("An unexpected error occurred while saving.");
+                    }
+                });
+            });
+        });
+
+        function populateProductDropdown(ddl) {
+            ddl.empty();
+            ddl.append(new Option("----- Select Product -----", ""));
+            $.each(productListOptions, function (i, item) {
+                ddl.append(new Option(item.value, item.name));
+            });
+        }
+
+        function addNewRow() {
+            var tr = $(`
+                <tr class="item-row">
+                    <td>
+                        <select class="form-control form-control-sm ddlProduct" required>
+                            <option value="">----- Select Product -----</option>
+                        </select>
+                    </td>
+                    <td>
+                        <input type="number" step="any" min="0.001" class="form-control form-control-sm text-right txtQty" value="1" required />
+                    </td>
+                    <td>
+                        <input type="number" step="any" min="0" class="form-control form-control-sm text-right txtLoss" value="0.00" />
+                    </td>
+                    <td>
+                        <input type="text" class="form-control form-control-sm txtItemReason" placeholder="Cause / Reason" />
+                    </td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-danger btn-sm btnRemoveRow" title="Remove"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `);
+
+            populateProductDropdown(tr.find('.ddlProduct'));
+            $('#tblDamageDetailsBody').append(tr);
+            calculateTotals();
+        }
+
+        function calculateTotals() {
+            var totalQty = 0;
+            var totalLoss = 0;
+            $('#tblDamageDetailsBody tr').each(function () {
+                totalQty += parseFloat($(this).find('.txtQty').val()) || 0;
+                totalLoss += parseFloat($(this).find('.txtLoss').val()) || 0;
+            });
+            $('#lblTotalQty').text(totalQty.toFixed(2));
+            $('#lblTotalLoss').text(totalLoss.toFixed(2));
+        }
+    </script>
+}
+

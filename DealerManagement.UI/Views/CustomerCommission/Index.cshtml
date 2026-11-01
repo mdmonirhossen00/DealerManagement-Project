@@ -1,0 +1,146 @@
+@{
+    ViewData["Title"] = "Dealer Commission";
+}
+
+@Html.Partial("_Header", new DealerManagement.Model.Common.HeaderModel()
+{
+    HeaderName = "Dealer Commission & Incentives",
+    BreadCrums = new Dictionary<string, string>()
+    {
+        {"/CustomerCommission", "Dealer Commission"},
+        {"", "List"}
+    }
+})
+
+<link href="~/css/button.css" rel="stylesheet" />
+
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header p-2">
+            <a href="/CustomerCommission/Create" class="button NewButton addNewButton">
+                <i class="fas fa-plus"></i> New Commission Entry
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <div class="card card-secondary">
+        <div class="card-header">
+            <h3 class="card-title">List Of Dealer Commission & Rebates</h3>
+        </div>
+        <div class="card-body">
+            <div id="CommissionGrid"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            var gridDataSource = new kendo.data.DataSource({
+                type: "json",
+                serverPaging: true,
+                serverSorting: true,
+                serverFiltering: true,
+                pageSize: 10,
+                transport: {
+                    read: {
+                        url: "/CustomerCommission/GetGridData",
+                        type: "POST",
+                        dataType: "json"
+                    }
+                },
+                schema: {
+                    data: "items",
+                    total: "totalCount",
+                    model: {
+                        id: "customerCommissionID",
+                        fields: {
+                            customerCommissionID: { type: "number" },
+                            customerName: { type: "string" },
+                            commissionDate: { type: "date" },
+                            commissionType: { type: "string" },
+                            referenceNo: { type: "string" },
+                            commissionAmount: { type: "number" },
+                            status: { type: "string" }
+                        }
+                    }
+                }
+            });
+
+            $("#CommissionGrid").kendoGrid({
+                dataSource: gridDataSource,
+                pageable: {
+                    refresh: true,
+                    pageSizes: [10, 20, 50, "all"],
+                    buttonCount: 5
+                },
+                sortable: true,
+                filterable: true,
+                columns: [
+                    {
+                        title: "Action",
+                        width: "110px",
+                        template: function (dataItem) {
+                            return `<a href='/CustomerCommission/Edit/${dataItem.customerCommissionID}' class='btn btn-primary btn-sm mr-1' title='Edit'>
+                                        <i class='fas fa-pencil-alt'></i>
+                                    </a>
+                                    <button type='button' class='btn btn-danger btn-sm' onclick='deleteCommission(${dataItem.customerCommissionID})' title='Delete'>
+                                        <i class='fas fa-trash'></i>
+                                    </button>`;
+                        }
+                    },
+                    { field: "customerName", title: "Customer / Dealer", width: "200px" },
+                    { 
+                        field: "commissionDate", 
+                        title: "Date", 
+                        width: "120px",
+                        template: "#= commissionDate ? kendo.toString(kendo.parseDate(commissionDate), 'yyyy-MM-dd') : '' #"
+                    },
+                    { field: "commissionType", title: "Commission Type", width: "160px" },
+                    { field: "referenceNo", title: "Policy / Ref No", width: "150px" },
+                    { 
+                        field: "commissionAmount", 
+                        title: "Commission Amount", 
+                        width: "160px",
+                        template: "#= kendo.toString(commissionAmount, 'n2') #"
+                    },
+                    {
+                        field: "status",
+                        title: "Status",
+                        width: "110px",
+                        template: function (dataItem) {
+                            var badge = "secondary";
+                            if (dataItem.status === "Posted") badge = "success";
+                            else if (dataItem.status === "Draft") badge = "info";
+                            else if (dataItem.status === "Cancelled") badge = "danger";
+                            return `<span class='badge badge-${badge}'>${dataItem.status}</span>`;
+                        }
+                    }
+                ]
+            });
+        });
+
+        function deleteCommission(id) {
+            if (confirm("Are you sure you want to delete this Commission entry?")) {
+                $.ajax({
+                    url: '/CustomerCommission/Delete/' + id,
+                    type: 'POST',
+                    success: function (res) {
+                        if (res.status === "Success" || res.status === 200 || res.status === "200") {
+                            toastr.success(res.message);
+                            $('#CommissionGrid').data('kendoGrid').dataSource.read();
+                        } else {
+                            toastr.error(res.message);
+                        }
+                    },
+                    error: function () {
+                        toastr.error("An error occurred while deleting.");
+                    }
+                });
+            }
+        }
+    </script>
+}
+

@@ -1,0 +1,269 @@
+@using System.Security.Claims
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>@ViewData["Title"] - Dealer Management Software</title>
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="~/AdminLte/plugins/fontawesome-free/css/all.min.css">
+    <!-- AdminLTE Theme -->
+    <link rel="stylesheet" href="~/AdminLte/dist/css/adminlte.min.css">
+    <!-- Shampan Custom CSS -->
+    <link rel="stylesheet" href="~/AdminLte/CSS/Custom.css">
+    <!-- Toastr Alert -->
+    <link rel="stylesheet" href="~/AdminLte/plugins/toastr/toastr.min.css">
+    <!-- Kendo UI 2021 Styles -->
+    <link rel="stylesheet" href="~/assets/kendoUI2021/kendo/style/kendo.common.min.css">
+    <link rel="stylesheet" href="~/assets/kendoUI2021/kendo/style/kendo.blueopal.min.css">
+
+    <style>
+        .main-header {
+            border-bottom: 1px solid #dee2e6;
+        }
+        .brand-link {
+            font-size: 1.15rem;
+            font-weight: 600;
+            text-align: center;
+            background-color: #343a40;
+            color: #fff !important;
+        }
+        .leftSidebar {
+            height: calc(100vh - 80px) !important;
+            overflow-x: hidden !important;
+            overflow-y: auto !important;
+        }
+        .nav-sidebar .nav-link {
+            cursor: pointer;
+        }
+        .k-grid {
+            font-size: 13px;
+        }
+        .k-grid-header th.k-header {
+            font-weight: 600;
+            background-color: #f4f6f9;
+        }
+        .content-header {
+            padding: 15px 0.5rem;
+        }
+        .nav-sidebar > .nav-item > a.treeview-expanded {
+            background: #448aff !important;
+            color: #fff !important;
+        }
+        .nav-sidebar .nav-treeview .nav-link.active {
+            background-color: rgba(255, 255, 255, .95) !important;
+            color: #1f2d3d !important;
+            font-weight: 600 !important;
+        }
+    </style>
+</head>
+<body class="hold-transition sidebar-mini layout-fixed layout-navbar-fixed">
+    <div class="wrapper">
+
+        <!-- Navbar -->
+        <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a id="toggleSidebar" class="nav-link" data-widget="pushmenu" href="#" role="button">
+                        <i class="fas fa-bars"></i>
+                    </a>
+                </li>
+                <li class="nav-item d-none d-sm-inline-block">
+                    <a href="/Home/Index" class="nav-link">Home</a>
+                </li>
+                <li class="nav-item d-none d-sm-inline-block">
+                    <a href="/User/Index" class="nav-link">Users</a>
+                </li>
+            </ul>
+
+            <ul class="navbar-nav ml-auto align-items-center">
+                <li class="nav-item mr-3">
+                    <span class="text-muted"><i class="fas fa-user-circle mr-1"></i> @User.Identity?.Name</span>
+                </li>
+                <li class="nav-item">
+                    <a href="/Login/LogOff" class="btn btn-outline-danger btn-sm" title="Log Out">
+                        <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Sidebar Container -->
+        <aside class="main-sidebar sidebar-dark-primary elevation-4">
+            <a href="/Home/Index" class="brand-link">
+                <i class="fas fa-cubes mr-2 text-primary"></i>
+                <span class="brand-text">Dealer Management</span>
+            </a>
+
+            <div class="sidebar">
+                <!-- Dynamic Menu Navigation from Database -->
+                <nav class="mt-2" id="partialViewContainer">
+                    <div class="text-center text-white-50 p-3">
+                        <i class="fas fa-spinner fa-spin mr-1"></i> Loading Menus...
+                    </div>
+                </nav>
+            </div>
+        </aside>
+
+        <!-- Content Wrapper -->
+        <div class="content-wrapper">
+            <section class="content pt-3">
+                <div class="container-fluid">
+                    @RenderBody()
+                </div>
+            </section>
+        </div>
+
+        <!-- Footer -->
+        <footer class="main-footer">
+            <div class="float-right d-none d-sm-inline">
+                <b>Database:</b> DealerManagementDB
+            </div>
+            <strong>Copyright &copy; @DateTime.Now.Year Dealer Management Software.</strong> All rights reserved.
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="~/AdminLte/plugins/jquery/jquery.min.js"></script>
+    <script src="~/AdminLte/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="~/AdminLte/dist/js/adminlte.min.js"></script>
+    <script src="~/AdminLte/plugins/toastr/toastr.min.js"></script>
+    <script src="~/assets/kendoUI2021/kendo/kendo.all.min.js"></script>
+    <script src="~/gasparesganga-jquery-loading-overlay/src/loadingoverlay.min.js"></script>
+    <script src="~/js/app/Site.Common.js"></script>
+    <script src="~/js/CommonComboLoader.js"></script>
+
+    <!-- Sidebar Dynamic Loading & SessionStorage Caching (Exact ShampanERP Pattern) -->
+    <script>
+        $(document).ready(function () {
+            // Global AJAX loading overlay
+            $(document).ajaxStart(function () {
+                $.LoadingOverlay("show");
+            });
+            $(document).ajaxComplete(function () {
+                $.LoadingOverlay("hide");
+            });
+          
+            // Load Dynamic Sidebar Menu
+            let cachedSidebar = sessionStorage.getItem("sidebarHtml");
+            // Invalidate cache if old 3-item menu was cached
+            if (cachedSidebar && cachedSidebar.indexOf('Product Category') === -1) {
+                sessionStorage.removeItem("sidebarHtml");
+                cachedSidebar = null;
+            }
+
+            if (cachedSidebar && cachedSidebar.trim().length > 0) {
+                $('#partialViewContainer').html(cachedSidebar);
+                restoreActiveMenuState();
+            } else {
+                loadSidebarPartial();
+            }
+
+            function loadSidebarPartial() {
+                $.get('/Home/_leftSideBar', function (data) {
+                    sessionStorage.setItem("sidebarHtml", data);
+                    $('#partialViewContainer').html(data);
+                    restoreActiveMenuState();
+                }).fail(function () {
+                    $('#partialViewContainer').html('<div class="p-3 text-warning">Failed to load menus.</div>');
+                });
+            }
+
+            // Parent Menu Toggle (ShampanERP exact pattern)
+            $('body').on('click', '.has-treeview', function (e) {
+                e.stopPropagation();
+                var $this = $(this);
+                var menuId = $this.data('menu-id');
+                var isExpanded = $this.hasClass('treeview-expanded');
+
+                // Close other expanded menus & reset icons
+                $('.has-treeview.treeview-expanded').not(this).removeClass('treeview-expanded').next('ul').slideUp();
+                $('.has-treeview .fa-angle-down').not($this.find('.fa-angle-left, .fa-angle-down')).removeClass('fa-angle-down').addClass('fa-angle-left');
+
+                // Toggle clicked menu
+                $this.next('ul').slideToggle();
+                $this.toggleClass('treeview-expanded', !isExpanded);
+
+                // Toggle icon state
+                var $icon = $this.find('.fa-angle-left, .fa-angle-down');
+                if (!isExpanded) {
+                    $icon.removeClass('fa-angle-left').addClass('fa-angle-down');
+                    localStorage.setItem('expandedMenu', menuId);
+                } else {
+                    $icon.removeClass('fa-angle-down').addClass('fa-angle-left');
+                    localStorage.removeItem('expandedMenu');
+                }
+            });
+
+            // Highlight Active Child Menu
+            $('body').on('click', '.nav-treeview .nav-link', function () {
+                var menuId = $(this).data('menu-id');
+                if (menuId) {
+                    localStorage.setItem('activeChildMenuId', menuId);
+                    $('.nav-treeview .nav-link').removeClass('active');
+                    $(this).addClass('active');
+                }
+            });
+
+            // Dashboard click resets active tree
+            $('body').on('click', '.Dashboard', function () {
+                localStorage.removeItem('expandedMenu');
+                localStorage.removeItem('activeChildMenuId');
+            });
+
+            function restoreActiveMenuState() {
+                var currentPath = window.location.pathname.toLowerCase();
+                var matched = false;
+
+                // 1. Highlight link matching current URL
+                $('.nav-treeview .nav-link').each(function () {
+                    var href = $(this).attr('href');
+                    if (href && href.toLowerCase() === currentPath) {
+                        $(this).addClass('active');
+                        var $parentLi = $(this).closest('.nav-treeview').closest('.nav-item');
+                        var $parentLink = $parentLi.find('> a.has-treeview');
+                        $parentLink.addClass('treeview-expanded');
+                        $parentLi.find('> ul.nav-treeview').show();
+                        $parentLink.find('.fa-angle-left').removeClass('fa-angle-left').addClass('fa-angle-down');
+                        matched = true;
+                    }
+                });
+
+                // 2. If not matched by exact path, restore from localStorage
+                if (!matched) {
+                    var expandedMenuId = localStorage.getItem('expandedMenu');
+                    if (expandedMenuId) {
+                        var $menuItem = $('[data-menu-id="' + expandedMenuId + '"]');
+                        if ($menuItem.length) {
+                            $menuItem.addClass('treeview-expanded');
+                            $menuItem.next('ul').show();
+                            $menuItem.find('.fa-angle-left').removeClass('fa-angle-left').addClass('fa-angle-down');
+                        }
+                    }
+
+                    var activeChildId = localStorage.getItem('activeChildMenuId');
+                    if (activeChildId) {
+                        var $child = $('.nav-treeview [data-menu-id="' + activeChildId + '"]');
+                        if ($child.length) {
+                            $child.addClass('active');
+                        }
+                    }
+                }
+            }
+
+            // Display Toastr messages if available in TempData
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <text>ShowNotification(1, '@TempData["SuccessMessage"]');</text>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <text>ShowNotification(3, '@TempData["ErrorMessage"]');</text>
+            }
+        });
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

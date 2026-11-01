@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\DealerManagement.Model\DealerManagement.Model.csproj" />
+    <ProjectReference Include="..\DealerManagement.Repository\DealerManagement.Repository.csproj" />
+    <ProjectReference Include="..\DealerManagement.Service\DealerManagement.Service.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,173 @@
+@model DealerManagement.Model.Entities.Customer
+@{
+    var isUpdate = Model.Operation == "update";
+    ViewData["Title"] = isUpdate ? "Edit Customer / Dealer" : "New Customer / Dealer";
+}
+
+@Html.Partial("_Header", new DealerManagement.Model.Common.HeaderModel()
+{
+    HeaderName = (isUpdate ? "Edit" : "Create") + " Customer / Dealer",
+    BreadCrums = new Dictionary<string, string>()
+    {
+        {"/Customer", "Customer / Dealer"},
+        {"", isUpdate ? "Edit" : "Create"}
+    }
+})
+
+<link href="~/css/button.css" rel="stylesheet" />
+
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header p-2">
+            <button type="button" class="button btnSave @(isUpdate ? "sslUpdate" : "sslSave")" id="btnSaveCustomer">
+                <i class="fas fa-save mr-1"></i> @(isUpdate ? "Update" : "Save")
+            </button>
+            <a href="/Customer/Index" class="btn btn-secondary btn-sm float-right ml-2">
+                <i class="fas fa-arrow-left mr-1"></i> Back to List
+            </a>
+            @if (isUpdate)
+            {
+                <a href="/Customer/Create" class="button NewButton addNewButton float-right">
+                    <i class="fas fa-plus mr-1"></i> New
+                </a>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <div class="card card-secondary">
+        <div class="card-header">
+            <h3 class="card-title">Customer & Dealer Details</h3>
+        </div>
+        <form id="frmCustomer">
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(m => m.CustomerID)
+            @Html.HiddenFor(m => m.Operation)
+
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.CustomerCode) <span class="text-danger">*</span>
+                        @Html.TextBoxFor(m => m.CustomerCode, new { @class = "form-control", placeholder = "e.g. CUST-001 / DLR-001", required = "required" })
+                        @Html.ValidationMessageFor(m => m.CustomerCode, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.CustomerName) <span class="text-danger">*</span>
+                        @Html.TextBoxFor(m => m.CustomerName, new { @class = "form-control", placeholder = "Business / Person Name", required = "required" })
+                        @Html.ValidationMessageFor(m => m.CustomerName, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.CustomerType) <span class="text-danger">*</span>
+                        <select id="CustomerType" name="CustomerType" class="form-control" required>
+                            <option value="Dealer" selected="@(Model.CustomerType == "Dealer")">Dealer</option>
+                            <option value="Retailer" selected="@(Model.CustomerType == "Retailer")">Retailer</option>
+                            <option value="Corporate" selected="@(Model.CustomerType == "Corporate")">Corporate</option>
+                            <option value="Individual" selected="@(Model.CustomerType == "Individual")">Individual</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.ContactPerson)
+                        @Html.TextBoxFor(m => m.ContactPerson, new { @class = "form-control", placeholder = "Key contact person" })
+                    </div>
+
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.Phone)
+                        @Html.TextBoxFor(m => m.Phone, new { @class = "form-control", placeholder = "Primary phone number" })
+                    </div>
+
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.AlternatePhone)
+                        @Html.TextBoxFor(m => m.AlternatePhone, new { @class = "form-control", placeholder = "Secondary phone number" })
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.Email)
+                        @Html.TextBoxFor(m => m.Email, new { @class = "form-control", type = "email", placeholder = "Email address" })
+                    </div>
+
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.Area)
+                        @Html.TextBoxFor(m => m.Area, new { @class = "form-control", placeholder = "Thana / Area" })
+                    </div>
+
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.District)
+                        @Html.TextBoxFor(m => m.District, new { @class = "form-control", placeholder = "District" })
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.CreditLimit)
+                        @Html.TextBoxFor(m => m.CreditLimit, new { @class = "form-control", type = "number", step = "0.01" })
+                    </div>
+
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.OpeningDate)
+                        <input type="date" id="OpeningDate" name="OpeningDate" class="form-control" value="@(Model.OpeningDate?.ToString("yyyy-MM-dd"))" />
+                    </div>
+
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.Address)
+                        @Html.TextBoxFor(m => m.Address, new { @class = "form-control", placeholder = "Street / Full Address" })
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        <div class="custom-control custom-switch mt-2">
+                            @Html.CheckBoxFor(m => m.IsActive, new { @class = "custom-control-input", id = "customSwitchCustomerActive" })
+                            <label class="custom-control-label" for="customSwitchCustomerActive">Active</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#btnSaveCustomer').click(function () {
+                var form = $('#frmCustomer');
+                if (!form[0].checkValidity()) {
+                    form[0].reportValidity();
+                    return;
+                }
+
+                var formData = form.serialize();
+
+                $.ajax({
+                    url: '/Customer/CreateEdit',
+                    type: 'POST',
+                    data: formData,
+                    success: function (res) {
+                        if (res.status === "Success" || res.status === 200 || res.status === "200") {
+                            toastr.success(res.message);
+                            if ($('#Operation').val() === 'add' && res.data) {
+                                $('#CustomerID').val(res.data.customerID);
+                                $('#Operation').val('update');
+                                $('#btnSaveCustomer').html('<i class="fas fa-save mr-1"></i> Update').removeClass('sslSave').addClass('sslUpdate');
+                            }
+                        } else {
+                            toastr.error(res.message);
+                        }
+                    },
+                    error: function () {
+                        toastr.error("An unexpected error occurred.");
+                    }
+                });
+            });
+        });
+    </script>
+}
+

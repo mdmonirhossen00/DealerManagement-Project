@@ -1,0 +1,145 @@
+@model DealerManagement.Model.ViewModels.LoginVM
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Login - Dealer Management Software</title>
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="~/AdminLte/plugins/fontawesome-free/css/all.min.css">
+    <!-- AdminLTE Theme -->
+    <link rel="stylesheet" href="~/AdminLte/dist/css/adminlte.min.css">
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #e9ecef;
+        }
+        .login-box {
+            width: 400px;
+        }
+        .login-logo {
+            font-size: 1.7rem;
+            font-weight: 700;
+            color: #343a40;
+            margin-bottom: 20px;
+        }
+        .card-primary.card-outline {
+            border-top: 4px solid #007bff;
+        }
+        .password-toggle {
+            cursor: pointer;
+        }
+        .validation-summary-errors {
+            color: #dc3545;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+        .field-validation-error {
+            color: #dc3545;
+            font-size: 0.82rem;
+            margin-top: -10px;
+            margin-bottom: 10px;
+            display: block;
+        }
+    </style>
+</head>
+<body class="hold-transition login-page">
+    <div class="login-box">
+        <div class="login-logo">
+            <i class="fas fa-cubes text-primary mr-1"></i>
+            <span>Dealer Management</span>
+        </div>
+
+        <div class="card card-outline card-primary shadow">
+            <div class="card-body login-card-body">
+                <p class="login-box-msg text-muted">Sign in to start your session</p>
+
+                <form asp-controller="Login" asp-action="Index" method="post" id="loginForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="ReturnUrl" />
+
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger py-2 px-3 mb-3">
+                            <i class="fas fa-exclamation-triangle mr-1"></i>
+                            @Html.ValidationSummary(true, "")
+                        </div>
+                    }
+
+                    <!-- Username -->
+                    <div class="input-group mb-3">
+                        <input asp-for="UserName" class="form-control" placeholder="Username" autocomplete="username" autofocus />
+                        <div class="input-group-append">
+                            <div class="input-group-text">
+                                <span class="fas fa-user text-muted"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <span asp-validation-for="UserName"></span>
+
+                    <!-- Password with Show/Hide toggle -->
+                    <div class="input-group mb-3">
+                        <input asp-for="Password" type="password" id="passwordInput" class="form-control" placeholder="Password" autocomplete="current-password" />
+                        <div class="input-group-append">
+                            <span class="input-group-text password-toggle" id="togglePasswordBtn" title="Show / Hide Password">
+                                <i class="fas fa-eye text-muted" id="togglePasswordIcon"></i>
+                            </span>
+                        </div>
+                    </div>
+                    <span asp-validation-for="Password"></span>
+
+                    <div class="row align-items-center mt-3">
+                        <div class="col-7">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" asp-for="RememberMe" class="custom-control-input" id="rememberMeCheck">
+                                <label class="custom-control-label font-weight-normal" for="rememberMeCheck">Remember Me</label>
+                            </div>
+                        </div>
+                        <div class="col-5">
+                            <button type="submit" class="btn btn-primary btn-block font-weight-bold">
+                                <i class="fas fa-sign-in-alt mr-1"></i> Sign In
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center text-muted py-2 bg-light font-weight-light" style="font-size: 0.85rem;">
+                Dealer Management Software &copy; @DateTime.Now.Year
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="~/AdminLte/plugins/jquery/jquery.min.js"></script>
+    <script src="~/AdminLte/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="~/AdminLte/dist/js/adminlte.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            // Password Show/Hide Toggle
+            $('#togglePasswordBtn').on('click', function () {
+                var input = $('#passwordInput');
+                var icon = $('#togglePasswordIcon');
+                if (input.attr('type') === 'password') {
+                    input.attr('type', 'text');
+                    icon.removeClass('fa-eye').addClass('fa-eye-slash');
+                } else {
+                    input.attr('type', 'password');
+                    icon.removeClass('fa-eye-slash').addClass('fa-eye');
+                }
+            });
+
+            // Clear session sidebar cache on login page (ShampanERP pattern)
+            sessionStorage.removeItem("sidebarHtml");
+            sessionStorage.removeItem("expandedMenuId");
+            sessionStorage.removeItem("activeChildMenuId");
+        });
+    </script>
+</body>
+</html>
+

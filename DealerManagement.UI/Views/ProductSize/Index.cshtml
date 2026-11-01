@@ -1,0 +1,124 @@
+@{
+    ViewData["Title"] = "Product Size";
+}
+
+@Html.Partial("_Header", new DealerManagement.Model.Common.HeaderModel()
+{
+    HeaderName = "Product Size List",
+    BreadCrums = new Dictionary<string, string>()
+    {
+        {"/ProductSize", "Product Size"},
+        {"", "List"}
+    }
+})
+
+<link href="~/css/button.css" rel="stylesheet" />
+
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header p-2">
+            <a href="/ProductSize/Create" class="button NewButton addNewButton">
+                <i class="fas fa-plus"></i> New Size
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <div class="card card-secondary">
+        <div class="card-header">
+            <h3 class="card-title">List Of Product Sizes</h3>
+        </div>
+        <div class="card-body">
+            <div id="SizeGrid"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            var gridDataSource = new kendo.data.DataSource({
+                type: "json",
+                serverPaging: true,
+                serverSorting: true,
+                serverFiltering: true,
+                pageSize: 10,
+                transport: {
+                    read: {
+                        url: "/ProductSize/GetGridData",
+                        type: "POST",
+                        dataType: "json"
+                    }
+                },
+                schema: {
+                    data: "items",
+                    total: "totalCount",
+                    model: {
+                        id: "productSizeID",
+                        fields: {
+                            productSizeID: { type: "number" },
+                            sizeName: { type: "string" },
+                            sortOrder: { type: "number" },
+                            isActive: { type: "boolean" }
+                        }
+                    }
+                }
+            });
+
+            $("#SizeGrid").kendoGrid({
+                dataSource: gridDataSource,
+                pageable: {
+                    refresh: true,
+                    pageSizes: [10, 20, 50, "all"],
+                    buttonCount: 5
+                },
+                sortable: true,
+                filterable: true,
+                columns: [
+                    {
+                        title: "Action",
+                        width: "110px",
+                        template: function (dataItem) {
+                            return `<a href='/ProductSize/Edit/${dataItem.productSizeID}' class='btn btn-primary btn-sm mr-1' title='Edit'>
+                                        <i class='fas fa-pencil-alt'></i>
+                                    </a>
+                                    <button type='button' class='btn btn-danger btn-sm' onclick='deleteSize(${dataItem.productSizeID})' title='Delete'>
+                                        <i class='fas fa-trash'></i>
+                                    </button>`;
+                        }
+                    },
+                    { field: "sizeName", title: "Size Name", width: "250px" },
+                    { field: "sortOrder", title: "Sort Order", width: "120px" },
+                    {
+                        field: "isActive",
+                        title: "Status",
+                        width: "120px",
+                        template: "#= isActive ? '<span class=\"badge badge-success\">Active</span>' : '<span class=\"badge badge-danger\">Inactive</span>' #"
+                    }
+                ]
+            });
+        });
+
+        function deleteSize(id) {
+            if (confirm("Are you sure you want to delete this Size?")) {
+                $.ajax({
+                    url: '/ProductSize/Delete/' + id,
+                    type: 'POST',
+                    success: function (res) {
+                        if (res.status === "Success" || res.status === 200 || res.status === "200") {
+                            toastr.success(res.message);
+                            $('#SizeGrid').data('kendoGrid').dataSource.read();
+                        } else {
+                            toastr.error(res.message);
+                        }
+                    },
+                    error: function () {
+                        toastr.error("An error occurred while deleting.");
+                    }
+                });
+            }
+        }
+    </script>
+}
+

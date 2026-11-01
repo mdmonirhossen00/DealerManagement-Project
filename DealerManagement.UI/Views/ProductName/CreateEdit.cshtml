@@ -1,0 +1,135 @@
+@model DealerManagement.Model.Entities.ProductName
+@{
+    var isUpdate = Model.Operation == "update";
+    ViewData["Title"] = isUpdate ? "Edit Product Name" : "New Product Name";
+}
+
+@Html.Partial("_Header", new DealerManagement.Model.Common.HeaderModel()
+{
+    HeaderName = (isUpdate ? "Edit" : "Create") + " Product Name",
+    BreadCrums = new Dictionary<string, string>()
+    {
+        {"/ProductName", "Product Name"},
+        {"", isUpdate ? "Edit" : "Create"}
+    }
+})
+
+<link href="~/css/button.css" rel="stylesheet" />
+
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header p-2">
+            <button type="button" class="button btnSave @(isUpdate ? "sslUpdate" : "sslSave")" id="btnSaveProductName">
+                <i class="fas fa-save mr-1"></i> @(isUpdate ? "Update" : "Save")
+            </button>
+            <a href="/ProductName/Index" class="btn btn-secondary btn-sm float-right ml-2">
+                <i class="fas fa-arrow-left mr-1"></i> Back to List
+            </a>
+            @if (isUpdate)
+            {
+                <a href="/ProductName/Create" class="button NewButton addNewButton float-right">
+                    <i class="fas fa-plus mr-1"></i> New
+                </a>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <div class="card card-secondary">
+        <div class="card-header">
+            <h3 class="card-title">Product Name Information</h3>
+        </div>
+        <form id="frmProductName">
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(m => m.ProductNameID)
+            @Html.HiddenFor(m => m.Operation)
+
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        <label>Category <span class="text-danger">*</span></label>
+                        <select id="ProductCategoryID" name="ProductCategoryID" class="form-control" data-selected="@Model.ProductCategoryID" required>
+                            <option value="">----- Select Category -----</option>
+                        </select>
+                        @Html.ValidationMessageFor(m => m.ProductCategoryID, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="col-md-6 form-group">
+                        @Html.LabelFor(m => m.ProductCode) <span class="text-danger">*</span>
+                        @Html.TextBoxFor(m => m.ProductCode, new { @class = "form-control", placeholder = "e.g. PRD-001", required = "required" })
+                        @Html.ValidationMessageFor(m => m.ProductCode, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        @Html.LabelFor(m => m.Name) <span class="text-danger">*</span>
+                        @Html.TextBoxFor(m => m.Name, new { @class = "form-control", placeholder = "Enter product name", required = "required" })
+                        @Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="col-md-6 form-group">
+                        @Html.LabelFor(m => m.Description)
+                        @Html.TextBoxFor(m => m.Description, new { @class = "form-control", placeholder = "Enter description" })
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        <div class="custom-control custom-switch mt-4">
+                            @Html.CheckBoxFor(m => m.IsActive, new { @class = "custom-control-input", id = "customSwitchIsActive" })
+                            <label class="custom-control-label" for="customSwitchIsActive">Active</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/CommonComboLoader.js"></script>
+    <script>
+        $(document).ready(function () {
+            LoadCombo("ProductCategoryID", '/Common/GetCategories');
+
+            var selectedCat = $('#ProductCategoryID').attr('data-selected');
+            if (selectedCat && selectedCat > 0) {
+                $('#ProductCategoryID').val(selectedCat);
+            }
+
+            $('#btnSaveProductName').click(function () {
+                var form = $('#frmProductName');
+                if (!form[0].checkValidity()) {
+                    form[0].reportValidity();
+                    return;
+                }
+
+                var formData = form.serialize();
+
+                $.ajax({
+                    url: '/ProductName/CreateEdit',
+                    type: 'POST',
+                    data: formData,
+                    success: function (res) {
+                        if (res.status === "Success" || res.status === 200 || res.status === "200") {
+                            toastr.success(res.message);
+                            if ($('#Operation').val() === 'add' && res.data) {
+                                $('#ProductNameID').val(res.data.productNameID);
+                                $('#Operation').val('update');
+                                $('#btnSaveProductName').html('<i class="fas fa-save mr-1"></i> Update').removeClass('sslSave').addClass('sslUpdate');
+                            }
+                        } else {
+                            toastr.error(res.message);
+                        }
+                    },
+                    error: function () {
+                        toastr.error("An unexpected error occurred.");
+                    }
+                });
+            });
+        });
+    </script>
+}
+

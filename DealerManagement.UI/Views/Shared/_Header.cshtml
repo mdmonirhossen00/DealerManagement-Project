@@ -1,0 +1,31 @@
+@model DealerManagement.Model.Common.HeaderModel
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-8 col-sm-6">
+                <h1 class="m-0 text-dark">@Model.HeaderName</h1>
+            </div>
+            <div class="col-4 col-sm-6">
+                <ol class="breadcrumb float-right">
+                    @{
+                        int i = 1;
+                    }
+                    @foreach (var item in Model.BreadCrums)
+                    {
+                        if (i != Model.BreadCrums.Count)
+                        {
+                            <li class="breadcrumb-item"><a href="@item.Key">@item.Value</a></li>
+                        }
+                        else
+                        {
+                            <li class="breadcrumb-item active">@item.Value</li>
+                        }
+                        i++;
+                    }
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+

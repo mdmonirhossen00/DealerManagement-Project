@@ -1,0 +1,418 @@
+@model DealerManagement.Model.Entities.PurchaseReceiptMaster
+@{
+    var isUpdate = Model.Operation == "update";
+    ViewData["Title"] = isUpdate ? "Edit Goods Receipt (GRN)" : "New Goods Receipt (GRN)";
+}
+
+@Html.Partial("_Header", new DealerManagement.Model.Common.HeaderModel()
+{
+    HeaderName = (isUpdate ? "Edit" : "Create") + " Goods Receipt (GRN)",
+    BreadCrums = new Dictionary<string, string>()
+    {
+        {"/PurchaseReceipt", "GRN / Receipts"},
+        {"", isUpdate ? "Edit" : "Create"}
+    }
+})
+
+<link href="~/css/button.css" rel="stylesheet" />
+
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header p-2">
+            <button type="button" class="button btnSave @(isUpdate ? "sslUpdate" : "sslSave")" id="btnSaveReceipt">
+                <i class="fas fa-save mr-1"></i> @(isUpdate ? "Update" : "Save")
+            </button>
+            <a href="/PurchaseReceipt/Index" class="btn btn-secondary btn-sm float-right ml-2">
+                <i class="fas fa-arrow-left mr-1"></i> Back to List
+            </a>
+            @if (isUpdate)
+            {
+                <a href="/PurchaseReceipt/Create" class="button NewButton addNewButton float-right">
+                    <i class="fas fa-plus mr-1"></i> New
+                </a>
+            }
+        </div>
+    </div>
+</div>
+
+<form id="frmReceiptMaster">
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.PurchaseReceiptID)
+    @Html.HiddenFor(m => m.Operation)
+
+    <div class="container-fluid">
+        <!-- Master Form Card -->
+        <div class="card card-secondary">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-clipboard-check mr-1"></i> GRN Master</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 form-group">
+                        @Html.LabelFor(m => m.ReceiptNo) <span class="text-danger">*</span>
+                        @Html.TextBoxFor(m => m.ReceiptNo, new { @class = "form-control form-control-sm", required = "required" })
+                        @Html.ValidationMessageFor(m => m.ReceiptNo, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="col-md-3 form-group">
+                        <label>Supplier <span class="text-danger">*</span></label>
+                        <select id="SupplierID" name="SupplierID" class="form-control form-control-sm" data-selected="@Model.SupplierID" required>
+                            <option value="">----- Select Supplier -----</option>
+                        </select>
+                        @Html.ValidationMessageFor(m => m.SupplierID, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="col-md-3 form-group">
+                        <label>PO Reference</label>
+                        <select id="PurchaseOrderID" name="PurchaseOrderID" class="form-control form-control-sm" data-selected="@Model.PurchaseOrderID">
+                            <option value="">----- Direct / Select PO -----</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3 form-group">
+                        @Html.LabelFor(m => m.ReceiptDate) <span class="text-danger">*</span>
+                        <input type="date" id="ReceiptDate" name="ReceiptDate" class="form-control form-control-sm" value="@Model.ReceiptDate.ToString("yyyy-MM-dd")" required />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.SupplierInvoiceNo)
+                        @Html.TextBoxFor(m => m.SupplierInvoiceNo, new { @class = "form-control form-control-sm", placeholder = "Vendor Invoice / Delivery Challan No" })
+                    </div>
+
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.Status)
+                        <select id="Status" name="Status" class="form-control form-control-sm">
+                            <option value="Draft" selected="@(Model.Status == "Draft")">Draft</option>
+                            <option value="Posted" selected="@(Model.Status == "Posted")">Posted</option>
+                            <option value="Cancelled" selected="@(Model.Status == "Cancelled")">Cancelled</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.Remarks)
+                        @Html.TextBoxFor(m => m.Remarks, new { @class = "form-control form-control-sm", placeholder = "Receipt remarks / notes" })
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Details Section Card -->
+        <div class="card card-secondary">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h3 class="card-title"><i class="fas fa-boxes mr-1"></i> Received Items</h3>
+                <button type="button" id="btnAddRow" class="btn btn-success btn-sm float-right">
+                    <i class="fas fa-plus mr-1"></i> Add Item
+                </button>
+            </div>
+            <div class="card-body p-0 table-responsive">
+                <table class="table table-bordered table-striped table-sm mb-0" id="tblReceiptDetails">
+                    <thead class="bg-light">
+                        <tr>
+                            <th style="width: 32%;">Product / Item <span class="text-danger">*</span></th>
+                            <th style="width: 12%; text-align: right;">Total Qty <span class="text-danger">*</span></th>
+                            <th style="width: 12%; text-align: right;">Accepted Qty <span class="text-danger">*</span></th>
+                            <th style="width: 12%; text-align: right;">Rejected Qty</th>
+                            <th style="width: 12%; text-align: right;">Unit Cost <span class="text-danger">*</span></th>
+                            <th style="width: 14%; text-align: right;">Line Total</th>
+                            <th style="width: 6%; text-align: center;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tblReceiptDetailsBody">
+                        @if (Model.DetailsList != null && Model.DetailsList.Any())
+                        {
+                            foreach (var line in Model.DetailsList)
+                            {
+                                <tr class="item-row">
+                                    <td>
+                                        <select class="form-control form-control-sm ddlProduct" required data-selected="@line.ProductID">
+                                            <option value="">----- Select Product -----</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="number" step="any" min="0.001" class="form-control form-control-sm text-right txtTotalQty" value="@line.Quantity" required />
+                                    </td>
+                                    <td>
+                                        <input type="number" step="any" min="0" class="form-control form-control-sm text-right txtAcceptedQty" value="@line.AcceptedQuantity" required />
+                                    </td>
+                                    <td>
+                                        <input type="number" step="any" min="0" class="form-control form-control-sm text-right txtRejectedQty" value="@line.RejectedQuantity" />
+                                    </td>
+                                    <td>
+                                        <input type="number" step="any" min="0" class="form-control form-control-sm text-right txtUnitCost" value="@line.UnitCost" required />
+                                    </td>
+                                    <td>
+                                        <input type="number" step="any" class="form-control form-control-sm text-right txtLineTotal bg-light" value="@(line.AcceptedQuantity * line.UnitCost)" readonly />
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-danger btn-sm btnRemoveRow" title="Remove"><i class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                    <tfoot class="bg-light font-weight-bold">
+                        <tr>
+                            <td class="text-right">Grand Total:</td>
+                            <td class="text-right"><span id="lblTotalQty">0.00</span></td>
+                            <td class="text-right"><span id="lblAcceptedQty">0.00</span></td>
+                            <td class="text-right"><span id="lblRejectedQty">0.00</span></td>
+                            <td></td>
+                            <td class="text-right"><span id="lblGrandTotal">0.00</span></td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <script src="~/js/CommonComboLoader.js"></script>
+    <script>
+        var productListOptions = [];
+
+        $(document).ready(function () {
+            // Load Suppliers
+            LoadCombo("SupplierID", '/Common/GetSuppliers');
+            var selSup = $('#SupplierID').attr('data-selected');
+            if (selSup && selSup > 0) {
+                $('#SupplierID').val(selSup);
+                LoadCombo("PurchaseOrderID", '/Common/GetPurchaseOrders?supplierId=' + selSup);
+            }
+
+            $('#SupplierID').change(function () {
+                var sId = $(this).val();
+                LoadCombo("PurchaseOrderID", '/Common/GetPurchaseOrders?supplierId=' + (sId || 0));
+            });
+
+            var selPO = $('#PurchaseOrderID').attr('data-selected');
+            if (selPO && selPO > 0) {
+                $('#PurchaseOrderID').val(selPO);
+            }
+
+            // Cache products list
+            $.ajax({
+                url: '/Common/GetProducts',
+                type: 'GET',
+                async: false,
+                success: function (data) {
+                    productListOptions = data;
+                }
+            });
+
+            $('#tblReceiptDetailsBody tr').each(function () {
+                var ddl = $(this).find('.ddlProduct');
+                populateProductDropdown(ddl);
+                var sel = ddl.attr('data-selected');
+                if (sel && sel > 0) {
+                    ddl.val(sel);
+                }
+            });
+
+            if ($('#tblReceiptDetailsBody tr').length === 0) {
+                addNewRow();
+            }
+
+            calculateTotals();
+
+            $('#btnAddRow').click(function () {
+                addNewRow();
+            });
+
+            $(document).on('click', '.btnRemoveRow', function () {
+                if ($('#tblReceiptDetailsBody tr').length > 1) {
+                    $(this).closest('tr').remove();
+                    calculateTotals();
+                } else {
+                    toastr.warning("At least one item line is required.");
+                }
+            });
+
+            $(document).on('change', '.ddlProduct', function () {
+                var row = $(this).closest('tr');
+                var productId = $(this).val();
+                if (productId && productId > 0) {
+                    $.ajax({
+                        url: '/Common/GetProductPrice?productId=' + productId + '&priceType=Purchase',
+                        type: 'GET',
+                        success: function (res) {
+                            if (res && res.price) {
+                                row.find('.txtUnitCost').val(res.price);
+                            }
+                            recalculateRow(row);
+                        }
+                    });
+                }
+            });
+
+            $(document).on('input', '.txtTotalQty, .txtAcceptedQty, .txtRejectedQty, .txtUnitCost', function () {
+                var row = $(this).closest('tr');
+                var total = parseFloat(row.find('.txtTotalQty').val()) || 0;
+                var accepted = parseFloat(row.find('.txtAcceptedQty').val()) || 0;
+                if ($(this).hasClass('txtAcceptedQty')) {
+                    row.find('.txtRejectedQty').val((total - accepted >= 0 ? total - accepted : 0).toFixed(2));
+                }
+                recalculateRow(row);
+            });
+
+            // Save Master & Details
+            $('#btnSaveReceipt').click(function () {
+                var form = $('#frmReceiptMaster');
+                if (!form[0].checkValidity()) {
+                    form[0].reportValidity();
+                    return;
+                }
+
+                var details = [];
+                var isValid = true;
+
+                $('#tblReceiptDetailsBody tr').each(function () {
+                    var prodId = $(this).find('.ddlProduct').val();
+                    var totQty = parseFloat($(this).find('.txtTotalQty').val()) || 0;
+                    var accQty = parseFloat($(this).find('.txtAcceptedQty').val()) || 0;
+                    var rejQty = parseFloat($(this).find('.txtRejectedQty').val()) || 0;
+                    var cost = parseFloat($(this).find('.txtUnitCost').val()) || 0;
+
+                    if (!prodId || prodId <= 0) {
+                        toastr.error("Please select a product for all item rows.");
+                        isValid = false;
+                        return false;
+                    }
+
+                    if (totQty <= 0) {
+                        toastr.error("Total quantity must be greater than zero for all rows.");
+                        isValid = false;
+                        return false;
+                    }
+
+                    details.push({
+                        ProductID: parseInt(prodId),
+                        Quantity: totQty,
+                        AcceptedQuantity: accQty,
+                        RejectedQuantity: rejQty,
+                        UnitCost: cost
+                    });
+                });
+
+                if (!isValid) return;
+
+                if (details.length === 0) {
+                    toastr.error("Please add at least one item line.");
+                    return;
+                }
+
+                var poIdVal = $('#PurchaseOrderID').val();
+
+                var masterData = {
+                    PurchaseReceiptID: parseInt($('#PurchaseReceiptID').val()) || 0,
+                    ReceiptNo: $('#ReceiptNo').val(),
+                    SupplierID: parseInt($('#SupplierID').val()),
+                    PurchaseOrderID: (poIdVal && poIdVal > 0) ? parseInt(poIdVal) : null,
+                    ReceiptDate: $('#ReceiptDate').val(),
+                    SupplierInvoiceNo: $('#SupplierInvoiceNo').val(),
+                    Status: $('#Status').val(),
+                    Remarks: $('#Remarks').val(),
+                    Operation: $('#Operation').val(),
+                    DetailsList: details
+                };
+
+                $.ajax({
+                    url: '/PurchaseReceipt/CreateEdit',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(masterData),
+                    success: function (res) {
+                        if (res.status === "Success" || res.status === 200 || res.status === "200") {
+                            toastr.success(res.message);
+                            if ($('#Operation').val() === 'add' && res.data) {
+                                $('#PurchaseReceiptID').val(res.data.purchaseReceiptID);
+                                $('#Operation').val('update');
+                                $('#btnSaveReceipt').html('<i class="fas fa-save mr-1"></i> Update').removeClass('sslSave').addClass('sslUpdate');
+                            }
+                        } else {
+                            toastr.error(res.message);
+                        }
+                    },
+                    error: function () {
+                        toastr.error("An unexpected error occurred while saving.");
+                    }
+                });
+            });
+        });
+
+        function populateProductDropdown(ddl) {
+            ddl.empty();
+            ddl.append(new Option("----- Select Product -----", ""));
+            $.each(productListOptions, function (i, item) {
+                ddl.append(new Option(item.value, item.name));
+            });
+        }
+
+        function addNewRow() {
+            var tr = $(`
+                <tr class="item-row">
+                    <td>
+                        <select class="form-control form-control-sm ddlProduct" required>
+                            <option value="">----- Select Product -----</option>
+                        </select>
+                    </td>
+                    <td>
+                        <input type="number" step="any" min="0.001" class="form-control form-control-sm text-right txtTotalQty" value="1" required />
+                    </td>
+                    <td>
+                        <input type="number" step="any" min="0" class="form-control form-control-sm text-right txtAcceptedQty" value="1" required />
+                    </td>
+                    <td>
+                        <input type="number" step="any" min="0" class="form-control form-control-sm text-right txtRejectedQty" value="0.00" />
+                    </td>
+                    <td>
+                        <input type="number" step="any" min="0" class="form-control form-control-sm text-right txtUnitCost" value="0.00" required />
+                    </td>
+                    <td>
+                        <input type="number" step="any" class="form-control form-control-sm text-right txtLineTotal bg-light" value="0.00" readonly />
+                    </td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-danger btn-sm btnRemoveRow" title="Remove"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `);
+
+            populateProductDropdown(tr.find('.ddlProduct'));
+            $('#tblReceiptDetailsBody').append(tr);
+            recalculateRow(tr);
+        }
+
+        function recalculateRow(row) {
+            var accepted = parseFloat(row.find('.txtAcceptedQty').val()) || 0;
+            var cost = parseFloat(row.find('.txtUnitCost').val()) || 0;
+
+            var lineTotal = accepted * cost;
+            row.find('.txtLineTotal').val(lineTotal.toFixed(2));
+
+            calculateTotals();
+        }
+
+        function calculateTotals() {
+            var totalQty = 0;
+            var acceptedQty = 0;
+            var rejectedQty = 0;
+            var grandTotal = 0;
+
+            $('#tblReceiptDetailsBody tr').each(function () {
+                totalQty += parseFloat($(this).find('.txtTotalQty').val()) || 0;
+                acceptedQty += parseFloat($(this).find('.txtAcceptedQty').val()) || 0;
+                rejectedQty += parseFloat($(this).find('.txtRejectedQty').val()) || 0;
+                grandTotal += parseFloat($(this).find('.txtLineTotal').val()) || 0;
+            });
+
+            $('#lblTotalQty').text(totalQty.toFixed(2));
+            $('#lblAcceptedQty').text(acceptedQty.toFixed(2));
+            $('#lblRejectedQty').text(rejectedQty.toFixed(2));
+            $('#lblGrandTotal').text(grandTotal.toFixed(2));
+        }
+    </script>
+}
+

@@ -1,0 +1,168 @@
+@model DealerManagement.Model.Entities.ProductSetup
+@{
+    var isUpdate = Model.Operation == "update";
+    ViewData["Title"] = isUpdate ? "Edit Product" : "New Product";
+}
+
+@Html.Partial("_Header", new DealerManagement.Model.Common.HeaderModel()
+{
+    HeaderName = (isUpdate ? "Edit" : "Create") + " Product Setup",
+    BreadCrums = new Dictionary<string, string>()
+    {
+        {"/ProductSetup", "Product Setup"},
+        {"", isUpdate ? "Edit" : "Create"}
+    }
+})
+
+<link href="~/css/button.css" rel="stylesheet" />
+
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header p-2">
+            <button type="button" class="button btnSave @(isUpdate ? "sslUpdate" : "sslSave")" id="btnSaveProduct">
+                <i class="fas fa-save mr-1"></i> @(isUpdate ? "Update" : "Save")
+            </button>
+            <a href="/ProductSetup/Index" class="btn btn-secondary btn-sm float-right ml-2">
+                <i class="fas fa-arrow-left mr-1"></i> Back to List
+            </a>
+            @if (isUpdate)
+            {
+                <a href="/ProductSetup/Create" class="button NewButton addNewButton float-right">
+                    <i class="fas fa-plus mr-1"></i> New
+                </a>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <div class="card card-secondary">
+        <div class="card-header">
+            <h3 class="card-title">Product Specification</h3>
+        </div>
+        <form id="frmProductSetup">
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(m => m.ProductID)
+            @Html.HiddenFor(m => m.Operation)
+
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        @Html.LabelFor(m => m.ProductCode) <span class="text-danger">*</span>
+                        @Html.TextBoxFor(m => m.ProductCode, new { @class = "form-control", placeholder = "Unique SKU / Item Code", required = "required" })
+                        @Html.ValidationMessageFor(m => m.ProductCode, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="col-md-6 form-group">
+                        <label>Product Name <span class="text-danger">*</span></label>
+                        <select id="ProductNameID" name="ProductNameID" class="form-control" data-selected="@Model.ProductNameID" required>
+                            <option value="">----- Select Product Name -----</option>
+                        </select>
+                        @Html.ValidationMessageFor(m => m.ProductNameID, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 form-group">
+                        <label>Size</label>
+                        <select id="ProductSizeID" name="ProductSizeID" class="form-control" data-selected="@Model.ProductSizeID">
+                            <option value="">----- None / Standard -----</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4 form-group">
+                        <label>Color</label>
+                        <select id="ProductColorID" name="ProductColorID" class="form-control" data-selected="@Model.ProductColorID">
+                            <option value="">----- None / Standard -----</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4 form-group">
+                        <label>Grade</label>
+                        <select id="ProductGradeID" name="ProductGradeID" class="form-control" data-selected="@Model.ProductGradeID">
+                            <option value="">----- None / Grade A -----</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.Barcode)
+                        @Html.TextBoxFor(m => m.Barcode, new { @class = "form-control", placeholder = "EAN / UPC / Barcode" })
+                    </div>
+
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.UnitName) <span class="text-danger">*</span>
+                        @Html.TextBoxFor(m => m.UnitName, new { @class = "form-control", placeholder = "e.g. PCS, BOX, KG", required = "required" })
+                    </div>
+
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.ReorderLevel)
+                        @Html.TextBoxFor(m => m.ReorderLevel, new { @class = "form-control", type = "number", step = "any" })
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        <div class="custom-control custom-switch mt-2">
+                            @Html.CheckBoxFor(m => m.IsActive, new { @class = "custom-control-input", id = "customSwitchProductActive" })
+                            <label class="custom-control-label" for="customSwitchProductActive">Active</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/CommonComboLoader.js"></script>
+    <script>
+        $(document).ready(function () {
+            LoadCombo("ProductNameID", '/Common/GetProductNames');
+            LoadCombo("ProductSizeID", '/Common/GetSizes');
+            LoadCombo("ProductColorID", '/Common/GetColors');
+            LoadCombo("ProductGradeID", '/Common/GetGrades');
+
+            // Select existing values
+            ['ProductNameID', 'ProductSizeID', 'ProductColorID', 'ProductGradeID'].forEach(function(id) {
+                var val = $('#' + id).attr('data-selected');
+                if (val && val > 0) {
+                    $('#' + id).val(val);
+                }
+            });
+
+            $('#btnSaveProduct').click(function () {
+                var form = $('#frmProductSetup');
+                if (!form[0].checkValidity()) {
+                    form[0].reportValidity();
+                    return;
+                }
+
+                var formData = form.serialize();
+
+                $.ajax({
+                    url: '/ProductSetup/CreateEdit',
+                    type: 'POST',
+                    data: formData,
+                    success: function (res) {
+                        if (res.status === "Success" || res.status === 200 || res.status === "200") {
+                            toastr.success(res.message);
+                            if ($('#Operation').val() === 'add' && res.data) {
+                                $('#ProductID').val(res.data.productID);
+                                $('#Operation').val('update');
+                                $('#btnSaveProduct').html('<i class="fas fa-save mr-1"></i> Update').removeClass('sslSave').addClass('sslUpdate');
+                            }
+                        } else {
+                            toastr.error(res.message);
+                        }
+                    },
+                    error: function () {
+                        toastr.error("An unexpected error occurred.");
+                    }
+                });
+            });
+        });
+    </script>
+}
+

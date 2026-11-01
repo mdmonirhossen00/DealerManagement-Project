@@ -1,0 +1,116 @@
+@model DealerManagement.Model.Entities.ProductGrade
+@{
+    var isUpdate = Model.Operation == "update";
+    ViewData["Title"] = isUpdate ? "Edit Grade" : "New Grade";
+}
+
+@Html.Partial("_Header", new DealerManagement.Model.Common.HeaderModel()
+{
+    HeaderName = (isUpdate ? "Edit" : "Create") + " Grade",
+    BreadCrums = new Dictionary<string, string>()
+    {
+        {"/ProductGrade", "Product Grade"},
+        {"", isUpdate ? "Edit" : "Create"}
+    }
+})
+
+<link href="~/css/button.css" rel="stylesheet" />
+
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header p-2">
+            <button type="button" class="button btnSave @(isUpdate ? "sslUpdate" : "sslSave")" id="btnSaveGrade">
+                <i class="fas fa-save mr-1"></i> @(isUpdate ? "Update" : "Save")
+            </button>
+            <a href="/ProductGrade/Index" class="btn btn-secondary btn-sm float-right ml-2">
+                <i class="fas fa-arrow-left mr-1"></i> Back to List
+            </a>
+            @if (isUpdate)
+            {
+                <a href="/ProductGrade/Create" class="button NewButton addNewButton float-right">
+                    <i class="fas fa-plus mr-1"></i> New
+                </a>
+            }
+        </div>
+    </div>
+</div>
+
+<form id="frmGrade">
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.ProductGradeID)
+    @Html.HiddenFor(m => m.Operation)
+
+    <div class="container-fluid">
+        <div class="card card-secondary">
+            <div class="card-header">
+                <h3 class="card-title">Grade Details</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-5 form-group">
+                        @Html.LabelFor(m => m.GradeName) <span class="text-danger">*</span>
+                        @Html.TextBoxFor(m => m.GradeName, new { @class = "form-control form-control-sm", required = "required", placeholder = "e.g., Grade A, Premium, Standard, Economy" })
+                        @Html.ValidationMessageFor(m => m.GradeName, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.Description)
+                        @Html.TextBoxFor(m => m.Description, new { @class = "form-control form-control-sm", placeholder = "Grade description / specifications" })
+                    </div>
+
+                    <div class="col-md-3 form-group d-flex align-items-center mt-4">
+                        <div class="form-check">
+                            @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input", id = "IsActive" })
+                            <label class="form-check-label" for="IsActive">Is Active</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#btnSaveGrade').click(function () {
+                var form = $('#frmGrade');
+                if (!form[0].checkValidity()) {
+                    form[0].reportValidity();
+                    return;
+                }
+
+                var model = {
+                    ProductGradeID: parseInt($('#ProductGradeID').val()) || 0,
+                    GradeName: $('#GradeName').val(),
+                    Description: $('#Description').val(),
+                    IsActive: $('#IsActive').is(':checked'),
+                    Operation: $('#Operation').val()
+                };
+
+                $.ajax({
+                    url: '/ProductGrade/CreateEdit',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(model),
+                    success: function (res) {
+                        if (res.status === "Success" || res.status === 200 || res.status === "200") {
+                            toastr.success(res.message);
+                            if ($('#Operation').val() === 'add' && res.data) {
+                                $('#ProductGradeID').val(res.data.productGradeID);
+                                $('#Operation').val('update');
+                                $('#btnSaveGrade').html('<i class="fas fa-save mr-1"></i> Update').removeClass('sslSave').addClass('sslUpdate');
+                            }
+                        } else {
+                            toastr.error(res.message);
+                        }
+                    },
+                    error: function () {
+                        toastr.error("An error occurred while saving.");
+                    }
+                });
+            });
+        });
+    </script>
+}
+

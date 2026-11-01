@@ -1,0 +1,89 @@
+@model List<DealerManagement.Model.Entities.Menu>
+
+<style>
+    .nav-item > a:hover {
+        background-color: #448aff !important;
+        color: white !important;
+    }
+
+    .nav-item > a {
+        transition: background-color 0.3s, color 0.3s;
+    }
+
+    .leftSidebar {
+        height: calc(100vh - 100px) !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+    }
+
+    .nav-sidebar .nav-treeview {
+        display: none;
+        list-style: none;
+        padding: 0;
+    }
+
+    .treeview-expanded {
+        background: #448aff !important;
+        color: #fff !important;
+    }
+
+    .nav-sidebar .nav-treeview .nav-link.active {
+        background-color: rgba(255, 255, 255, .9) !important;
+        color: #343a40 !important;
+        font-weight: 600;
+    }
+</style>
+
+@if (ViewBag.ShouldRenderMenu == true && Model != null && Model.Any())
+{
+    var menuList = Model ?? new List<DealerManagement.Model.Entities.Menu>();
+    <div class="leftSidebar">
+        <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+            @foreach (var menuItem in menuList.Where(m => m.ParentId == 0).OrderBy(m => m.DisplayOrder))
+            {
+                var children = menuList.Where(m => m.ParentId == menuItem.Id).OrderBy(m => m.DisplayOrder).ToList();
+                var hasSubmenu = children.Any();
+                var totalChild = children.Count > 0 ? children.Count.ToString() : string.Empty;
+
+                <li class="nav-item">
+                    <a style="cursor:pointer !important;" 
+                       class="nav-link @menuItem.Name @if (hasSubmenu) { <text>has-treeview</text> }" 
+                       href="@(string.IsNullOrEmpty(menuItem.Url) || menuItem.Url == "#" ? "javascript:void(0);" : menuItem.Url)" 
+                       data-menu-id="@menuItem.Id">
+                        <i class="@menuItem.IconClass mr-2"></i>
+                        <p>
+                            @menuItem.Name
+                            @if (hasSubmenu)
+                            {
+                                <i class="fas fa-angle-left right"></i>
+                            }
+                            @if (!string.IsNullOrEmpty(totalChild))
+                            {
+                                <span class="badge badge-info right">@totalChild</span>
+                            }
+                        </p>
+                    </a>
+
+                    @if (hasSubmenu)
+                    {
+                        <ul class="nav nav-treeview">
+                            @foreach (var subMenu in children)
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" 
+                                       href="@subMenu.Url" 
+                                       data-menu-id="@subMenu.Id"
+                                       data-controller="@subMenu.Controller"
+                                       data-action="@subMenu.Action">
+                                        <i class="@(string.IsNullOrEmpty(subMenu.IconClass) ? "far fa-circle" : subMenu.IconClass) nav-icon"></i>
+                                        <p>@subMenu.Name</p>
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </li>
+            }
+        </ul>
+    </div>
+}

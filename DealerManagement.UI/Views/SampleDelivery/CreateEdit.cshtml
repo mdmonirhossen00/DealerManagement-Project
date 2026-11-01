@@ -1,0 +1,360 @@
+@model DealerManagement.Model.Entities.SampleDeliveryMaster
+@{
+    var isUpdate = Model.Operation == "update";
+    ViewData["Title"] = isUpdate ? "Edit Sample Delivery" : "New Sample Delivery";
+}
+
+@Html.Partial("_Header", new DealerManagement.Model.Common.HeaderModel()
+{
+    HeaderName = (isUpdate ? "Edit" : "Create") + " Sample Delivery",
+    BreadCrums = new Dictionary<string, string>()
+    {
+        {"/SampleDelivery", "Sample Delivery"},
+        {"", isUpdate ? "Edit" : "Create"}
+    }
+})
+
+<link href="~/css/button.css" rel="stylesheet" />
+
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header p-2">
+            <button type="button" class="button btnSave @(isUpdate ? "sslUpdate" : "sslSave")" id="btnSaveSample">
+                <i class="fas fa-save mr-1"></i> @(isUpdate ? "Update" : "Save")
+            </button>
+            <a href="/SampleDelivery/Index" class="btn btn-secondary btn-sm float-right ml-2">
+                <i class="fas fa-arrow-left mr-1"></i> Back to List
+            </a>
+            @if (isUpdate)
+            {
+                <a href="/SampleDelivery/Create" class="button NewButton addNewButton float-right">
+                    <i class="fas fa-plus mr-1"></i> New
+                </a>
+            }
+        </div>
+    </div>
+</div>
+
+<form id="frmSampleMaster">
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.SampleDeliveryID)
+    @Html.HiddenFor(m => m.Operation)
+
+    <div class="container-fluid">
+        <!-- Master Form Card -->
+        <div class="card card-secondary">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-gift mr-1"></i> Sample Delivery Master</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 form-group">
+                        @Html.LabelFor(m => m.SampleDeliveryNo) <span class="text-danger">*</span>
+                        @Html.TextBoxFor(m => m.SampleDeliveryNo, new { @class = "form-control form-control-sm", required = "required" })
+                        @Html.ValidationMessageFor(m => m.SampleDeliveryNo, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="col-md-3 form-group">
+                        <label>Dealer / Customer</label>
+                        <select id="CustomerID" name="CustomerID" class="form-control form-control-sm" data-selected="@Model.CustomerID">
+                            <option value="">----- Direct / Select Dealer -----</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3 form-group">
+                        @Html.LabelFor(m => m.DeliveryTo)
+                        @Html.TextBoxFor(m => m.DeliveryTo, new { @class = "form-control form-control-sm", placeholder = "Recipient Name / Organization" })
+                    </div>
+
+                    <div class="col-md-3 form-group">
+                        @Html.LabelFor(m => m.DeliveryDate) <span class="text-danger">*</span>
+                        <input type="date" id="DeliveryDate" name="DeliveryDate" class="form-control form-control-sm" value="@Model.DeliveryDate.ToString("yyyy-MM-dd")" required />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 form-group">
+                        @Html.LabelFor(m => m.Status)
+                        <select id="Status" name="Status" class="form-control form-control-sm">
+                            <option value="Draft" selected="@(Model.Status == "Draft")">Draft</option>
+                            <option value="Approved" selected="@(Model.Status == "Approved")">Approved</option>
+                            <option value="Delivered" selected="@(Model.Status == "Delivered")">Delivered</option>
+                            <option value="Returned" selected="@(Model.Status == "Returned")">Returned</option>
+                            <option value="Cancelled" selected="@(Model.Status == "Cancelled")">Cancelled</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.Purpose)
+                        @Html.TextBoxFor(m => m.Purpose, new { @class = "form-control form-control-sm", placeholder = "e.g., Marketing, Quality Testing, Expo" })
+                    </div>
+
+                    <div class="col-md-5 form-group">
+                        @Html.LabelFor(m => m.Remarks)
+                        @Html.TextBoxFor(m => m.Remarks, new { @class = "form-control form-control-sm", placeholder = "Additional notes" })
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Details Section Card -->
+        <div class="card card-secondary">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h3 class="card-title"><i class="fas fa-boxes mr-1"></i> Sample Items</h3>
+                <button type="button" id="btnAddRow" class="btn btn-success btn-sm float-right">
+                    <i class="fas fa-plus mr-1"></i> Add Item
+                </button>
+            </div>
+            <div class="card-body p-0 table-responsive">
+                <table class="table table-bordered table-striped table-sm mb-0" id="tblSampleDetails">
+                    <thead class="bg-light">
+                        <tr>
+                            <th style="width: 30%;">Product / Item <span class="text-danger">*</span></th>
+                            <th style="width: 12%; text-align: right;">Quantity <span class="text-danger">*</span></th>
+                            <th style="width: 12%; text-align: right;">Unit Cost</th>
+                            <th style="width: 10%; text-align: center;">Returnable?</th>
+                            <th style="width: 14%;">Expected Return</th>
+                            <th style="width: 16%;">Item Remarks</th>
+                            <th style="width: 6%; text-align: center;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tblSampleDetailsBody">
+                        @if (Model.DetailsList != null && Model.DetailsList.Any())
+                        {
+                            foreach (var line in Model.DetailsList)
+                            {
+                                <tr class="item-row">
+                                    <td>
+                                        <select class="form-control form-control-sm ddlProduct" required data-selected="@line.ProductID">
+                                            <option value="">----- Select Product -----</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="number" step="any" min="0.001" class="form-control form-control-sm text-right txtQty" value="@line.Quantity" required />
+                                    </td>
+                                    <td>
+                                        <input type="number" step="any" min="0" class="form-control form-control-sm text-right txtCost" value="@(line.UnitCost ?? 0)" />
+                                    </td>
+                                    <td class="text-center align-middle">
+                                        <input type="checkbox" class="chkReturnable" @(line.IsReturnable ? "checked" : "") />
+                                    </td>
+                                    <td>
+                                        <input type="date" class="form-control form-control-sm dtExpectedReturn" value="@(line.ExpectedReturnDate?.ToString("yyyy-MM-dd"))" />
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm txtItemRemarks" value="@line.Remarks" placeholder="Remarks" />
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-danger btn-sm btnRemoveRow" title="Remove"><i class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                    <tfoot class="bg-light font-weight-bold">
+                        <tr>
+                            <td class="text-right">Grand Total Qty:</td>
+                            <td class="text-right"><span id="lblTotalQty">0.00</span></td>
+                            <td colspan="5"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <script src="~/js/CommonComboLoader.js"></script>
+    <script>
+        var productListOptions = [];
+
+        $(document).ready(function () {
+            // Load Customers
+            LoadCombo("CustomerID", '/Common/GetCustomers');
+            var selCust = $('#CustomerID').attr('data-selected');
+            if (selCust && selCust > 0) {
+                $('#CustomerID').val(selCust);
+            }
+
+            // Cache products list
+            $.ajax({
+                url: '/Common/GetProducts',
+                type: 'GET',
+                async: false,
+                success: function (data) {
+                    productListOptions = data;
+                }
+            });
+
+            $('#tblSampleDetailsBody tr').each(function () {
+                var ddl = $(this).find('.ddlProduct');
+                populateProductDropdown(ddl);
+                var sel = ddl.attr('data-selected');
+                if (sel && sel > 0) {
+                    ddl.val(sel);
+                }
+            });
+
+            if ($('#tblSampleDetailsBody tr').length === 0) {
+                addNewRow();
+            }
+
+            calculateTotals();
+
+            $('#btnAddRow').click(function () {
+                addNewRow();
+            });
+
+            $(document).on('click', '.btnRemoveRow', function () {
+                if ($('#tblSampleDetailsBody tr').length > 1) {
+                    $(this).closest('tr').remove();
+                    calculateTotals();
+                } else {
+                    toastr.warning("At least one item line is required.");
+                }
+            });
+
+            $(document).on('input', '.txtQty', function () {
+                calculateTotals();
+            });
+
+            // Save Master & Details
+            $('#btnSaveSample').click(function () {
+                var form = $('#frmSampleMaster');
+                if (!form[0].checkValidity()) {
+                    form[0].reportValidity();
+                    return;
+                }
+
+                var details = [];
+                var isValid = true;
+
+                $('#tblSampleDetailsBody tr').each(function () {
+                    var prodId = $(this).find('.ddlProduct').val();
+                    var qty = parseFloat($(this).find('.txtQty').val()) || 0;
+                    var cost = parseFloat($(this).find('.txtCost').val()) || 0;
+                    var isRet = $(this).find('.chkReturnable').is(':checked');
+                    var expDate = $(this).find('.dtExpectedReturn').val() || null;
+                    var rem = $(this).find('.txtItemRemarks').val();
+
+                    if (!prodId || prodId <= 0) {
+                        toastr.error("Please select a product for all item rows.");
+                        isValid = false;
+                        return false;
+                    }
+
+                    if (qty <= 0) {
+                        toastr.error("Quantity must be greater than zero for all rows.");
+                        isValid = false;
+                        return false;
+                    }
+
+                    details.push({
+                        ProductID: parseInt(prodId),
+                        Quantity: qty,
+                        UnitCost: cost,
+                        IsReturnable: isRet,
+                        ExpectedReturnDate: expDate,
+                        Remarks: rem
+                    });
+                });
+
+                if (!isValid) return;
+
+                if (details.length === 0) {
+                    toastr.error("Please add at least one item line.");
+                    return;
+                }
+
+                var custIdVal = $('#CustomerID').val();
+
+                var masterData = {
+                    SampleDeliveryID: parseInt($('#SampleDeliveryID').val()) || 0,
+                    SampleDeliveryNo: $('#SampleDeliveryNo').val(),
+                    CustomerID: (custIdVal && custIdVal > 0) ? parseInt(custIdVal) : null,
+                    DeliveryTo: $('#DeliveryTo').val(),
+                    DeliveryDate: $('#DeliveryDate').val(),
+                    Purpose: $('#Purpose').val(),
+                    Remarks: $('#Remarks').val(),
+                    Status: $('#Status').val(),
+                    Operation: $('#Operation').val(),
+                    DetailsList: details
+                };
+
+                $.ajax({
+                    url: '/SampleDelivery/CreateEdit',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(masterData),
+                    success: function (res) {
+                        if (res.status === "Success" || res.status === 200 || res.status === "200") {
+                            toastr.success(res.message);
+                            if ($('#Operation').val() === 'add' && res.data) {
+                                $('#SampleDeliveryID').val(res.data.sampleDeliveryID);
+                                $('#Operation').val('update');
+                                $('#btnSaveSample').html('<i class="fas fa-save mr-1"></i> Update').removeClass('sslSave').addClass('sslUpdate');
+                            }
+                        } else {
+                            toastr.error(res.message);
+                        }
+                    },
+                    error: function () {
+                        toastr.error("An unexpected error occurred while saving.");
+                    }
+                });
+            });
+        });
+
+        function populateProductDropdown(ddl) {
+            ddl.empty();
+            ddl.append(new Option("----- Select Product -----", ""));
+            $.each(productListOptions, function (i, item) {
+                ddl.append(new Option(item.value, item.name));
+            });
+        }
+
+        function addNewRow() {
+            var tr = $(`
+                <tr class="item-row">
+                    <td>
+                        <select class="form-control form-control-sm ddlProduct" required>
+                            <option value="">----- Select Product -----</option>
+                        </select>
+                    </td>
+                    <td>
+                        <input type="number" step="any" min="0.001" class="form-control form-control-sm text-right txtQty" value="1" required />
+                    </td>
+                    <td>
+                        <input type="number" step="any" min="0" class="form-control form-control-sm text-right txtCost" value="0.00" />
+                    </td>
+                    <td class="text-center align-middle">
+                        <input type="checkbox" class="chkReturnable" />
+                    </td>
+                    <td>
+                        <input type="date" class="form-control form-control-sm dtExpectedReturn" />
+                    </td>
+                    <td>
+                        <input type="text" class="form-control form-control-sm txtItemRemarks" placeholder="Remarks" />
+                    </td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-danger btn-sm btnRemoveRow" title="Remove"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `);
+
+            populateProductDropdown(tr.find('.ddlProduct'));
+            $('#tblSampleDetailsBody').append(tr);
+            calculateTotals();
+        }
+
+        function calculateTotals() {
+            var totalQty = 0;
+            $('#tblSampleDetailsBody tr').each(function () {
+                totalQty += parseFloat($(this).find('.txtQty').val()) || 0;
+            });
+            $('#lblTotalQty').text(totalQty.toFixed(2));
+        }
+    </script>
+}
+

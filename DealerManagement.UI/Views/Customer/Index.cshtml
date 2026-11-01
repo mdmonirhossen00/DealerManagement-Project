@@ -1,0 +1,144 @@
+@{
+    ViewData["Title"] = "Customer / Dealer Setup";
+}
+
+@Html.Partial("_Header", new DealerManagement.Model.Common.HeaderModel()
+{
+    HeaderName = "Customer / Dealer List",
+    BreadCrums = new Dictionary<string, string>()
+    {
+        {"/Customer", "Customer / Dealer"},
+        {"", "List"}
+    }
+})
+
+<link href="~/css/button.css" rel="stylesheet" />
+
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header p-2">
+            <a href="/Customer/Create" class="button NewButton addNewButton">
+                <i class="fas fa-plus"></i> New Customer / Dealer
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <div class="card card-secondary">
+        <div class="card-header">
+            <h3 class="card-title">List Of Customers & Dealers</h3>
+        </div>
+        <div class="card-body">
+            <div id="CustomerGrid"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            var gridDataSource = new kendo.data.DataSource({
+                type: "json",
+                serverPaging: true,
+                serverSorting: true,
+                serverFiltering: true,
+                pageSize: 10,
+                transport: {
+                    read: {
+                        url: "/Customer/GetGridData",
+                        type: "POST",
+                        dataType: "json"
+                    }
+                },
+                schema: {
+                    data: "items",
+                    total: "totalCount",
+                    model: {
+                        id: "customerID",
+                        fields: {
+                            customerID: { type: "number" },
+                            customerCode: { type: "string" },
+                            customerName: { type: "string" },
+                            customerType: { type: "string" },
+                            contactPerson: { type: "string" },
+                            phone: { type: "string" },
+                            email: { type: "string" },
+                            district: { type: "string" },
+                            creditLimit: { type: "number" },
+                            isActive: { type: "boolean" }
+                        }
+                    }
+                }
+            });
+
+            $("#CustomerGrid").kendoGrid({
+                dataSource: gridDataSource,
+                pageable: {
+                    refresh: true,
+                    pageSizes: [10, 20, 50, "all"],
+                    buttonCount: 5
+                },
+                sortable: true,
+                filterable: true,
+                columns: [
+                    {
+                        title: "Action",
+                        width: "110px",
+                        template: function (dataItem) {
+                            return `<a href='/Customer/Edit/${dataItem.customerID}' class='btn btn-primary btn-sm mr-1' title='Edit'>
+                                        <i class='fas fa-pencil-alt'></i>
+                                    </a>
+                                    <button type='button' class='btn btn-danger btn-sm' onclick='deleteCustomer(${dataItem.customerID})' title='Delete'>
+                                        <i class='fas fa-trash'></i>
+                                    </button>`;
+                        }
+                    },
+                    { field: "customerCode", title: "Code", width: "120px" },
+                    { field: "customerName", title: "Name", width: "200px" },
+                    { field: "customerType", title: "Type", width: "110px" },
+                    { field: "contactPerson", title: "Contact Person", width: "140px" },
+                    { field: "phone", title: "Phone", width: "130px" },
+                    { field: "district", title: "District", width: "120px" },
+                    { 
+                        field: "creditLimit", 
+                        title: "Credit Limit", 
+                        width: "130px",
+                        template: "#= kendo.toString(creditLimit, 'n2') #" 
+                    },
+                    {
+                        field: "isActive",
+                        title: "Status",
+                        width: "100px",
+                        template: function (dataItem) {
+                            return dataItem.isActive 
+                                ? "<span class='badge badge-success'>Active</span>" 
+                                : "<span class='badge badge-danger'>Inactive</span>";
+                        }
+                    }
+                ]
+            });
+        });
+
+        function deleteCustomer(id) {
+            if (confirm("Are you sure you want to delete this Customer / Dealer?")) {
+                $.ajax({
+                    url: '/Customer/Delete/' + id,
+                    type: 'POST',
+                    success: function (res) {
+                        if (res.status === "Success" || res.status === 200 || res.status === "200") {
+                            toastr.success(res.message);
+                            $('#CustomerGrid').data('kendoGrid').dataSource.read();
+                        } else {
+                            toastr.error(res.message);
+                        }
+                    },
+                    error: function () {
+                        toastr.error("An error occurred while deleting.");
+                    }
+                });
+            }
+        }
+    </script>
+}
+

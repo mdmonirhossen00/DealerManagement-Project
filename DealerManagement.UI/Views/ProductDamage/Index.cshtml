@@ -1,0 +1,165 @@
+@{
+    ViewData["Title"] = "Damage / Loss Report";
+}
+
+@Html.Partial("_Header", new DealerManagement.Model.Common.HeaderModel()
+{
+    HeaderName = "Damage & Missing Report List",
+    BreadCrums = new Dictionary<string, string>()
+    {
+        {"/ProductDamage", "Damage & Missing"},
+        {"", "List"}
+    }
+})
+
+<link href="~/css/button.css" rel="stylesheet" />
+
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header p-2">
+            <a href="/ProductDamage/Create" class="button NewButton addNewButton">
+                <i class="fas fa-plus"></i> New Damage / Loss Report
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <div class="card card-secondary">
+        <div class="card-header">
+            <h3 class="card-title">List Of Damage, Broken & Missing Reports</h3>
+        </div>
+        <div class="card-body">
+            <div id="DamageGrid"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            var gridDataSource = new kendo.data.DataSource({
+                type: "json",
+                serverPaging: true,
+                serverSorting: true,
+                serverFiltering: true,
+                pageSize: 10,
+                transport: {
+                    read: {
+                        url: "/ProductDamage/GetGridData",
+                        type: "POST",
+                        dataType: "json"
+                    }
+                },
+                schema: {
+                    data: "items",
+                    total: "totalCount",
+                    model: {
+                        id: "productDamageMasterID",
+                        fields: {
+                            productDamageMasterID: { type: "number" },
+                            damageReportNo: { type: "string" },
+                            reportDate: { type: "date" },
+                            reportType: { type: "string" },
+                            locationName: { type: "string" },
+                            reportedBy: { type: "string" },
+                            totalQuantity: { type: "number" },
+                            totalLoss: { type: "number" },
+                            status: { type: "string" }
+                        }
+                    }
+                }
+            });
+
+            $("#DamageGrid").kendoGrid({
+                dataSource: gridDataSource,
+                pageable: {
+                    refresh: true,
+                    pageSizes: [10, 20, 50, "all"],
+                    buttonCount: 5
+                },
+                sortable: true,
+                filterable: true,
+                columns: [
+                    {
+                        title: "Action",
+                        width: "110px",
+                        template: function (dataItem) {
+                            return `<a href='/ProductDamage/Edit/${dataItem.productDamageMasterID}' class='btn btn-primary btn-sm mr-1' title='Edit'>
+                                        <i class='fas fa-pencil-alt'></i>
+                                    </a>
+                                    <button type='button' class='btn btn-danger btn-sm' onclick='deleteDamage(${dataItem.productDamageMasterID})' title='Delete'>
+                                        <i class='fas fa-trash'></i>
+                                    </button>`;
+                        }
+                    },
+                    { field: "damageReportNo", title: "Report No", width: "160px" },
+                    { 
+                        field: "reportDate", 
+                        title: "Date", 
+                        width: "120px",
+                        template: "#= reportDate ? kendo.toString(kendo.parseDate(reportDate), 'yyyy-MM-dd') : '' #"
+                    },
+                    {
+                        field: "reportType",
+                        title: "Report Type",
+                        width: "130px",
+                        template: function (dataItem) {
+                            var badge = "warning";
+                            if (dataItem.reportType === "Broken") badge = "danger";
+                            else if (dataItem.reportType === "Missing") badge = "dark";
+                            return `<span class='badge badge-${badge}'>${dataItem.reportType}</span>`;
+                        }
+                    },
+                    { field: "locationName", title: "Warehouse / Location", width: "170px" },
+                    { field: "reportedBy", title: "Reported By", width: "150px" },
+                    { 
+                        field: "totalQuantity", 
+                        title: "Loss Qty", 
+                        width: "120px",
+                        template: "#= kendo.toString(totalQuantity, 'n2') #"
+                    },
+                    { 
+                        field: "totalLoss", 
+                        title: "Est. Loss (Tk)", 
+                        width: "140px",
+                        template: "#= kendo.toString(totalLoss, 'n2') #"
+                    },
+                    {
+                        field: "status",
+                        title: "Status",
+                        width: "110px",
+                        template: function (dataItem) {
+                            var badge = "secondary";
+                            if (dataItem.status === "Approved") badge = "success";
+                            else if (dataItem.status === "Draft") badge = "info";
+                            else if (dataItem.status === "Cancelled") badge = "danger";
+                            return `<span class='badge badge-${badge}'>${dataItem.status}</span>`;
+                        }
+                    }
+                ]
+            });
+        });
+
+        function deleteDamage(id) {
+            if (confirm("Are you sure you want to delete this Damage / Loss report?")) {
+                $.ajax({
+                    url: '/ProductDamage/Delete/' + id,
+                    type: 'POST',
+                    success: function (res) {
+                        if (res.status === "Success" || res.status === 200 || res.status === "200") {
+                            toastr.success(res.message);
+                            $('#DamageGrid').data('kendoGrid').dataSource.read();
+                        } else {
+                            toastr.error(res.message);
+                        }
+                    },
+                    error: function () {
+                        toastr.error("An error occurred while deleting.");
+                    }
+                });
+            }
+        }
+    </script>
+}
+

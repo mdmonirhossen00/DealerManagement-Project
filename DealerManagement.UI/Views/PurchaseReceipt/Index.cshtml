@@ -1,0 +1,147 @@
+@{
+    ViewData["Title"] = "Purchase Receipt (GRN)";
+}
+
+@Html.Partial("_Header", new DealerManagement.Model.Common.HeaderModel()
+{
+    HeaderName = "Goods Receipt Note (GRN) List",
+    BreadCrums = new Dictionary<string, string>()
+    {
+        {"/PurchaseReceipt", "GRN / Receipts"},
+        {"", "List"}
+    }
+})
+
+<link href="~/css/button.css" rel="stylesheet" />
+
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header p-2">
+            <a href="/PurchaseReceipt/Create" class="button NewButton addNewButton">
+                <i class="fas fa-plus"></i> New Goods Receipt (GRN)
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <div class="card card-secondary">
+        <div class="card-header">
+            <h3 class="card-title">List Of Goods Receipts</h3>
+        </div>
+        <div class="card-body">
+            <div id="ReceiptGrid"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            var gridDataSource = new kendo.data.DataSource({
+                type: "json",
+                serverPaging: true,
+                serverSorting: true,
+                serverFiltering: true,
+                pageSize: 10,
+                transport: {
+                    read: {
+                        url: "/PurchaseReceipt/GetGridData",
+                        type: "POST",
+                        dataType: "json"
+                    }
+                },
+                schema: {
+                    data: "items",
+                    total: "totalCount",
+                    model: {
+                        id: "purchaseReceiptID",
+                        fields: {
+                            purchaseReceiptID: { type: "number" },
+                            receiptNo: { type: "string" },
+                            supplierName: { type: "string" },
+                            purchaseOrderNo: { type: "string" },
+                            receiptDate: { type: "date" },
+                            supplierInvoiceNo: { type: "string" },
+                            totalAmount: { type: "number" },
+                            status: { type: "string" }
+                        }
+                    }
+                }
+            });
+
+            $("#ReceiptGrid").kendoGrid({
+                dataSource: gridDataSource,
+                pageable: {
+                    refresh: true,
+                    pageSizes: [10, 20, 50, "all"],
+                    buttonCount: 5
+                },
+                sortable: true,
+                filterable: true,
+                columns: [
+                    {
+                        title: "Action",
+                        width: "110px",
+                        template: function (dataItem) {
+                            return `<a href='/PurchaseReceipt/Edit/${dataItem.purchaseReceiptID}' class='btn btn-primary btn-sm mr-1' title='Edit'>
+                                        <i class='fas fa-pencil-alt'></i>
+                                    </a>
+                                    <button type='button' class='btn btn-danger btn-sm' onclick='deleteReceipt(${dataItem.purchaseReceiptID})' title='Delete'>
+                                        <i class='fas fa-trash'></i>
+                                    </button>`;
+                        }
+                    },
+                    { field: "receiptNo", title: "GRN / Receipt No", width: "160px" },
+                    { field: "supplierName", title: "Supplier", width: "200px" },
+                    { field: "purchaseOrderNo", title: "PO Reference", width: "160px" },
+                    { 
+                        field: "receiptDate", 
+                        title: "Receipt Date", 
+                        width: "120px",
+                        template: "#= receiptDate ? kendo.toString(kendo.parseDate(receiptDate), 'yyyy-MM-dd') : '' #"
+                    },
+                    { field: "supplierInvoiceNo", title: "Supplier Inv / Challan", width: "160px" },
+                    { 
+                        field: "totalAmount", 
+                        title: "Total Amount", 
+                        width: "140px",
+                        template: "#= kendo.toString(totalAmount, 'n2') #"
+                    },
+                    {
+                        field: "status",
+                        title: "Status",
+                        width: "110px",
+                        template: function (dataItem) {
+                            var badge = "secondary";
+                            if (dataItem.status === "Posted") badge = "success";
+                            else if (dataItem.status === "Cancelled") badge = "danger";
+                            return `<span class='badge badge-${badge}'>${dataItem.status}</span>`;
+                        }
+                    }
+                ]
+            });
+        });
+
+        function deleteReceipt(id) {
+            if (confirm("Are you sure you want to delete this Receipt?")) {
+                $.ajax({
+                    url: '/PurchaseReceipt/Delete/' + id,
+                    type: 'POST',
+                    success: function (res) {
+                        if (res.status === "Success" || res.status === 200 || res.status === "200") {
+                            toastr.success(res.message);
+                            $('#ReceiptGrid').data('kendoGrid').dataSource.read();
+                        } else {
+                            toastr.error(res.message);
+                        }
+                    },
+                    error: function () {
+                        toastr.error("An error occurred while deleting.");
+                    }
+                });
+            }
+        }
+    </script>
+}
+

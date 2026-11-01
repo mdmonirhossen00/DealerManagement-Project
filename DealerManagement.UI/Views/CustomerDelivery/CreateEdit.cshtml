@@ -1,0 +1,402 @@
+@model DealerManagement.Model.Entities.CustomerDeliveryMaster
+@{
+    var isUpdate = Model.Operation == "update";
+    ViewData["Title"] = isUpdate ? "Edit Delivery Challan" : "New Delivery Challan";
+}
+
+@Html.Partial("_Header", new DealerManagement.Model.Common.HeaderModel()
+{
+    HeaderName = (isUpdate ? "Edit" : "Create") + " Delivery Challan",
+    BreadCrums = new Dictionary<string, string>()
+    {
+        {"/CustomerDelivery", "Delivery Challan"},
+        {"", isUpdate ? "Edit" : "Create"}
+    }
+})
+
+<link href="~/css/button.css" rel="stylesheet" />
+
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header p-2">
+            <button type="button" class="button btnSave @(isUpdate ? "sslUpdate" : "sslSave")" id="btnSaveDel">
+                <i class="fas fa-save mr-1"></i> @(isUpdate ? "Update" : "Save")
+            </button>
+            <a href="/CustomerDelivery/Index" class="btn btn-secondary btn-sm float-right ml-2">
+                <i class="fas fa-arrow-left mr-1"></i> Back to List
+            </a>
+            @if (isUpdate)
+            {
+                <a href="/CustomerDelivery/Create" class="button NewButton addNewButton float-right">
+                    <i class="fas fa-plus mr-1"></i> New
+                </a>
+            }
+        </div>
+    </div>
+</div>
+
+<form id="frmDelMaster">
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.CustomerDeliveryID)
+    @Html.HiddenFor(m => m.Operation)
+
+    <div class="container-fluid">
+        <!-- Master Form Card -->
+        <div class="card card-secondary">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-truck mr-1"></i> Delivery Challan Master</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 form-group">
+                        @Html.LabelFor(m => m.DeliveryNo) <span class="text-danger">*</span>
+                        @Html.TextBoxFor(m => m.DeliveryNo, new { @class = "form-control form-control-sm", required = "required" })
+                        @Html.ValidationMessageFor(m => m.DeliveryNo, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="col-md-3 form-group">
+                        <label>Customer / Dealer <span class="text-danger">*</span></label>
+                        <select id="CustomerID" name="CustomerID" class="form-control form-control-sm" data-selected="@Model.CustomerID" required>
+                            <option value="">----- Select Customer -----</option>
+                        </select>
+                        @Html.ValidationMessageFor(m => m.CustomerID, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="col-md-3 form-group">
+                        <label>Order Reference</label>
+                        <select id="CustomerOrderID" name="CustomerOrderID" class="form-control form-control-sm" data-selected="@Model.CustomerOrderID">
+                            <option value="">----- Direct / Select Order -----</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3 form-group">
+                        @Html.LabelFor(m => m.DeliveryDate) <span class="text-danger">*</span>
+                        <input type="date" id="DeliveryDate" name="DeliveryDate" class="form-control form-control-sm" value="@Model.DeliveryDate.ToString("yyyy-MM-dd")" required />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 form-group">
+                        @Html.LabelFor(m => m.VehicleNo)
+                        @Html.TextBoxFor(m => m.VehicleNo, new { @class = "form-control form-control-sm", placeholder = "Vehicle / Truck Reg No" })
+                    </div>
+
+                    <div class="col-md-3 form-group">
+                        @Html.LabelFor(m => m.DriverName)
+                        @Html.TextBoxFor(m => m.DriverName, new { @class = "form-control form-control-sm", placeholder = "Driver Name & Mobile" })
+                    </div>
+
+                    <div class="col-md-3 form-group">
+                        @Html.LabelFor(m => m.DeliveryAddress)
+                        @Html.TextBoxFor(m => m.DeliveryAddress, new { @class = "form-control form-control-sm", placeholder = "Destination address" })
+                    </div>
+
+                    <div class="col-md-3 form-group">
+                        @Html.LabelFor(m => m.Status)
+                        <select id="Status" name="Status" class="form-control form-control-sm">
+                            <option value="Draft" selected="@(Model.Status == "Draft")">Draft</option>
+                            <option value="Dispatched" selected="@(Model.Status == "Dispatched")">Dispatched</option>
+                            <option value="Delivered" selected="@(Model.Status == "Delivered")">Delivered</option>
+                            <option value="Cancelled" selected="@(Model.Status == "Cancelled")">Cancelled</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12 form-group mb-0">
+                        @Html.LabelFor(m => m.Remarks)
+                        @Html.TextBoxFor(m => m.Remarks, new { @class = "form-control form-control-sm", placeholder = "Delivery remarks / notes" })
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Details Section Card -->
+        <div class="card card-secondary">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h3 class="card-title"><i class="fas fa-boxes mr-1"></i> Delivered Items</h3>
+                <button type="button" id="btnAddRow" class="btn btn-success btn-sm float-right">
+                    <i class="fas fa-plus mr-1"></i> Add Item
+                </button>
+            </div>
+            <div class="card-body p-0 table-responsive">
+                <table class="table table-bordered table-striped table-sm mb-0" id="tblDelDetails">
+                    <thead class="bg-light">
+                        <tr>
+                            <th style="width: 40%;">Product / Item <span class="text-danger">*</span></th>
+                            <th style="width: 15%; text-align: right;">Quantity <span class="text-danger">*</span></th>
+                            <th style="width: 15%; text-align: right;">Unit Price <span class="text-danger">*</span></th>
+                            <th style="width: 18%; text-align: right;">Line Total</th>
+                            <th style="width: 12%; text-align: center;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tblDelDetailsBody">
+                        @if (Model.DetailsList != null && Model.DetailsList.Any())
+                        {
+                            foreach (var line in Model.DetailsList)
+                            {
+                                <tr class="item-row">
+                                    <td>
+                                        <select class="form-control form-control-sm ddlProduct" required data-selected="@line.ProductID">
+                                            <option value="">----- Select Product -----</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="number" step="any" min="0.001" class="form-control form-control-sm text-right txtQty" value="@line.Quantity" required />
+                                    </td>
+                                    <td>
+                                        <input type="number" step="any" min="0" class="form-control form-control-sm text-right txtPrice" value="@line.UnitPrice" required />
+                                    </td>
+                                    <td>
+                                        <input type="number" step="any" class="form-control form-control-sm text-right txtLineTotal bg-light" value="@(line.Quantity * line.UnitPrice)" readonly />
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-danger btn-sm btnRemoveRow" title="Remove"><i class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                    <tfoot class="bg-light font-weight-bold">
+                        <tr>
+                            <td class="text-right">Grand Total:</td>
+                            <td class="text-right"><span id="lblTotalQty">0.00</span></td>
+                            <td></td>
+                            <td class="text-right"><span id="lblGrandTotal">0.00</span></td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <script src="~/js/CommonComboLoader.js"></script>
+    <script>
+        var productListOptions = [];
+
+        $(document).ready(function () {
+            // Load Customers
+            LoadCombo("CustomerID", '/Common/GetCustomers');
+            var selCust = $('#CustomerID').attr('data-selected');
+            if (selCust && selCust > 0) {
+                $('#CustomerID').val(selCust);
+                LoadCombo("CustomerOrderID", '/Common/GetCustomerOrders?customerId=' + selCust);
+            }
+
+            $('#CustomerID').change(function () {
+                var cId = $(this).val();
+                LoadCombo("CustomerOrderID", '/Common/GetCustomerOrders?customerId=' + (cId || 0));
+            });
+
+            var selOrder = $('#CustomerOrderID').attr('data-selected');
+            if (selOrder && selOrder > 0) {
+                $('#CustomerOrderID').val(selOrder);
+            }
+
+            // Cache products list
+            $.ajax({
+                url: '/Common/GetProducts',
+                type: 'GET',
+                async: false,
+                success: function (data) {
+                    productListOptions = data;
+                }
+            });
+
+            $('#tblDelDetailsBody tr').each(function () {
+                var ddl = $(this).find('.ddlProduct');
+                populateProductDropdown(ddl);
+                var sel = ddl.attr('data-selected');
+                if (sel && sel > 0) {
+                    ddl.val(sel);
+                }
+            });
+
+            if ($('#tblDelDetailsBody tr').length === 0) {
+                addNewRow();
+            }
+
+            calculateTotals();
+
+            $('#btnAddRow').click(function () {
+                addNewRow();
+            });
+
+            $(document).on('click', '.btnRemoveRow', function () {
+                if ($('#tblDelDetailsBody tr').length > 1) {
+                    $(this).closest('tr').remove();
+                    calculateTotals();
+                } else {
+                    toastr.warning("At least one item line is required.");
+                }
+            });
+
+            $(document).on('change', '.ddlProduct', function () {
+                var row = $(this).closest('tr');
+                var productId = $(this).val();
+                if (productId && productId > 0) {
+                    $.ajax({
+                        url: '/Common/GetProductPrice?productId=' + productId + '&priceType=Dealer',
+                        type: 'GET',
+                        success: function (res) {
+                            if (res && res.price) {
+                                row.find('.txtPrice').val(res.price);
+                            }
+                            recalculateRow(row);
+                        }
+                    });
+                }
+            });
+
+            $(document).on('input', '.txtQty, .txtPrice', function () {
+                var row = $(this).closest('tr');
+                recalculateRow(row);
+            });
+
+            // Save Master & Details
+            $('#btnSaveDel').click(function () {
+                var form = $('#frmDelMaster');
+                if (!form[0].checkValidity()) {
+                    form[0].reportValidity();
+                    return;
+                }
+
+                var details = [];
+                var isValid = true;
+
+                $('#tblDelDetailsBody tr').each(function () {
+                    var prodId = $(this).find('.ddlProduct').val();
+                    var qty = parseFloat($(this).find('.txtQty').val()) || 0;
+                    var price = parseFloat($(this).find('.txtPrice').val()) || 0;
+
+                    if (!prodId || prodId <= 0) {
+                        toastr.error("Please select a product for all item rows.");
+                        isValid = false;
+                        return false;
+                    }
+
+                    if (qty <= 0) {
+                        toastr.error("Quantity must be greater than zero for all rows.");
+                        isValid = false;
+                        return false;
+                    }
+
+                    details.push({
+                        ProductID: parseInt(prodId),
+                        Quantity: qty,
+                        UnitPrice: price
+                    });
+                });
+
+                if (!isValid) return;
+
+                if (details.length === 0) {
+                    toastr.error("Please add at least one item line.");
+                    return;
+                }
+
+                var orderIdVal = $('#CustomerOrderID').val();
+
+                var masterData = {
+                    CustomerDeliveryID: parseInt($('#CustomerDeliveryID').val()) || 0,
+                    DeliveryNo: $('#DeliveryNo').val(),
+                    CustomerID: parseInt($('#CustomerID').val()),
+                    CustomerOrderID: (orderIdVal && orderIdVal > 0) ? parseInt(orderIdVal) : null,
+                    DeliveryDate: $('#DeliveryDate').val(),
+                    DeliveryAddress: $('#DeliveryAddress').val(),
+                    VehicleNo: $('#VehicleNo').val(),
+                    DriverName: $('#DriverName').val(),
+                    Status: $('#Status').val(),
+                    Remarks: $('#Remarks').val(),
+                    Operation: $('#Operation').val(),
+                    DetailsList: details
+                };
+
+                $.ajax({
+                    url: '/CustomerDelivery/CreateEdit',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(masterData),
+                    success: function (res) {
+                        if (res.status === "Success" || res.status === 200 || res.status === "200") {
+                            toastr.success(res.message);
+                            if ($('#Operation').val() === 'add' && res.data) {
+                                $('#CustomerDeliveryID').val(res.data.customerDeliveryID);
+                                $('#Operation').val('update');
+                                $('#btnSaveDel').html('<i class="fas fa-save mr-1"></i> Update').removeClass('sslSave').addClass('sslUpdate');
+                            }
+                        } else {
+                            toastr.error(res.message);
+                        }
+                    },
+                    error: function () {
+                        toastr.error("An unexpected error occurred while saving.");
+                    }
+                });
+            });
+        });
+
+        function populateProductDropdown(ddl) {
+            ddl.empty();
+            ddl.append(new Option("----- Select Product -----", ""));
+            $.each(productListOptions, function (i, item) {
+                ddl.append(new Option(item.value, item.name));
+            });
+        }
+
+        function addNewRow() {
+            var tr = $(`
+                <tr class="item-row">
+                    <td>
+                        <select class="form-control form-control-sm ddlProduct" required>
+                            <option value="">----- Select Product -----</option>
+                        </select>
+                    </td>
+                    <td>
+                        <input type="number" step="any" min="0.001" class="form-control form-control-sm text-right txtQty" value="1" required />
+                    </td>
+                    <td>
+                        <input type="number" step="any" min="0" class="form-control form-control-sm text-right txtPrice" value="0.00" required />
+                    </td>
+                    <td>
+                        <input type="number" step="any" class="form-control form-control-sm text-right txtLineTotal bg-light" value="0.00" readonly />
+                    </td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-danger btn-sm btnRemoveRow" title="Remove"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `);
+
+            populateProductDropdown(tr.find('.ddlProduct'));
+            $('#tblDelDetailsBody').append(tr);
+            recalculateRow(tr);
+        }
+
+        function recalculateRow(row) {
+            var qty = parseFloat(row.find('.txtQty').val()) || 0;
+            var price = parseFloat(row.find('.txtPrice').val()) || 0;
+
+            var lineTotal = qty * price;
+            row.find('.txtLineTotal').val(lineTotal.toFixed(2));
+
+            calculateTotals();
+        }
+
+        function calculateTotals() {
+            var totalQty = 0;
+            var grandTotal = 0;
+
+            $('#tblDelDetailsBody tr').each(function () {
+                totalQty += parseFloat($(this).find('.txtQty').val()) || 0;
+                grandTotal += parseFloat($(this).find('.txtLineTotal').val()) || 0;
+            });
+
+            $('#lblTotalQty').text(totalQty.toFixed(2));
+            $('#lblGrandTotal').text(grandTotal.toFixed(2));
+        }
+    </script>
+}
+

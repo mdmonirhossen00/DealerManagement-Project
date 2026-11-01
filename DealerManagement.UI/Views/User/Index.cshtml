@@ -1,0 +1,263 @@
+@{
+    ViewData["Title"] = "User Management";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0 text-dark"><i class="fas fa-users mr-2 text-primary"></i> User Management</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="/Home/Index">Home</a></li>
+                    <li class="breadcrumb-item active">Users</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card card-outline card-primary shadow-sm">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h3 class="card-title font-weight-bold">Registered Users</h3>
+        <div class="card-tools ml-auto">
+            <a href="/User/Create" class="btn btn-primary btn-sm">
+                <i class="fas fa-user-plus mr-1"></i> Add New User
+            </a>
+            <button type="button" class="btn btn-default btn-sm ml-1" id="btnRefreshGrid" title="Refresh">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <!-- Kendo Grid Container -->
+        <div id="userGrid"></div>
+    </div>
+</div>
+
+<!-- Change Password Modal -->
+<div class="modal fade" id="changePasswordModal" tabindex="-1" role="dialog" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="changePasswordModalLabel"><i class="fas fa-key mr-2"></i> Change Password</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="changePasswordForm">
+                    <input type="hidden" id="cpUserId" />
+                    <div class="form-group">
+                        <label>Username:</label>
+                        <input type="text" id="cpUserName" class="form-control" readonly />
+                    </div>
+                    <div class="form-group">
+                        <label>New Password: <span class="text-danger">*</span></label>
+                        <input type="password" id="cpNewPassword" class="form-control" placeholder="Minimum 6 characters" required />
+                    </div>
+                    <div class="form-group">
+                        <label>Confirm Password: <span class="text-danger">*</span></label>
+                        <input type="password" id="cpConfirmPassword" class="form-control" placeholder="Re-enter new password" required />
+                    </div>
+                    <div id="cpErrorMessage" class="alert alert-danger py-1 px-2 d-none"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary btn-sm" id="btnSavePassword">
+                    <i class="fas fa-save mr-1"></i> Save Password
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Initialize Kendo Grid for Users (following ShampanERP pattern)
+            var gridDataSource = new kendo.data.DataSource({
+                type: "json",
+                serverPaging: true,
+                serverSorting: true,
+                serverFiltering: true,
+                pageSize: 10,
+                transport: {
+                    read: {
+                        url: "/User/GetUserGrid",
+                        type: "POST",
+                        dataType: "json",
+                        cache: false
+                    },
+                    parameterMap: function (options) {
+                        return options;
+                    }
+                },
+                schema: {
+                    data: "items",
+                    total: "totalCount",
+                    model: {
+                        id: "userID",
+                        fields: {
+                            userID: { type: "number" },
+                            userName: { type: "string" },
+                            fullName: { type: "string" },
+                            email: { type: "string" },
+                            phoneNumber: { type: "string" },
+                            isActive: { type: "boolean" },
+                            createdAt: { type: "date" }
+                        }
+                    }
+                }
+            });
+
+            $("#userGrid").kendoGrid({
+                dataSource: gridDataSource,
+                pageable: {
+                    refresh: true,
+                    pageSizes: [10, 20, 50, 100],
+                    buttonCount: 5
+                },
+                sortable: true,
+                filterable: {
+                    extra: false,
+                    operators: {
+                        string: {
+                            contains: "Contains",
+                            startswith: "Starts with",
+                            eq: "Is equal to"
+                        }
+                    }
+                },
+                resizable: true,
+                columns: [
+                    {
+                        title: "Actions",
+                        width: 140,
+                        headerAttributes: { style: "text-align: center;" },
+                        attributes: { style: "text-align: center;" },
+                        template: function (dataItem) {
+                            var editBtn = "<a href='/User/Edit/" + dataItem.userID + "' class='btn btn-sm btn-info mr-1' title='Edit User'><i class='fas fa-edit'></i></a>";
+                            var keyBtn = "<button class='btn btn-sm btn-warning mr-1 btn-change-pw' data-id='" + dataItem.userID + "' data-username='" + dataItem.userName + "' title='Reset Password'><i class='fas fa-key'></i></button>";
+                            var toggleBtn = dataItem.isActive
+                                ? "<button class='btn btn-sm btn-danger btn-toggle-status' data-id='" + dataItem.userID + "' data-status='false' title='Deactivate User'><i class='fas fa-user-slash'></i></button>"
+                                : "<button class='btn btn-sm btn-success btn-toggle-status' data-id='" + dataItem.userID + "' data-status='true' title='Activate User'><i class='fas fa-user-check'></i></button>";
+                            return editBtn + keyBtn + toggleBtn;
+                        }
+                    },
+                    { field: "userID", title: "ID", width: 60, attributes: { style: "text-align: center;" } },
+                    { field: "userName", title: "Username", width: 140 },
+                    { field: "fullName", title: "Full Name", width: 180 },
+                    { field: "email", title: "Email", width: 180, template: "#= email ? email : '-' #" },
+                    { field: "phoneNumber", title: "Phone", width: 130, template: "#= phoneNumber ? phoneNumber : '-' #" },
+                    {
+                        field: "isActive",
+                        title: "Status",
+                        width: 100,
+                        attributes: { style: "text-align: center;" },
+                        template: function (dataItem) {
+                            return dataItem.isActive
+                                ? "<span class='badge badge-success px-2 py-1'><i class='fas fa-check mr-1'></i> Active</span>"
+                                : "<span class='badge badge-secondary px-2 py-1'><i class='fas fa-times mr-1'></i> Inactive</span>";
+                        }
+                    },
+                    {
+                        field: "createdAt",
+                        title: "Created On",
+                        width: 130,
+                        template: "#= kendo.toString(kendo.parseDate(createdAt), 'dd-MMM-yyyy') #"
+                    }
+                ]
+            });
+
+            // Refresh Grid
+            $('#btnRefreshGrid').on('click', function () {
+                $("#userGrid").data("kendoGrid").dataSource.read();
+            });
+
+            // Toggle User Status
+            $('body').on('click', '.btn-toggle-status', function () {
+                var userId = $(this).data('id');
+                var activate = $(this).data('status');
+                var actionText = activate ? "activate" : "deactivate";
+
+                if (confirm("Are you sure you want to " + actionText + " this user?")) {
+                    $.ajax({
+                        url: '/User/ToggleStatus',
+                        type: 'POST',
+                        data: { id: userId },
+                        success: function (res) {
+                            if (res.success) {
+                                ShowNotification(1, res.message);
+                                $("#userGrid").data("kendoGrid").dataSource.read();
+                            } else {
+                                ShowNotification(3, res.message);
+                            }
+                        },
+                        error: function () {
+                            ShowNotification(3, "Failed to update user status.");
+                        }
+                    });
+                }
+            });
+
+            // Open Change Password Modal
+            $('body').on('click', '.btn-change-pw', function () {
+                var userId = $(this).data('id');
+                var userName = $(this).data('username');
+
+                $('#cpUserId').val(userId);
+                $('#cpUserName').val(userName);
+                $('#cpNewPassword').val('');
+                $('#cpConfirmPassword').val('');
+                $('#cpErrorMessage').addClass('d-none').text('');
+
+                $('#changePasswordModal').modal('show');
+            });
+
+            // Save New Password
+            $('#btnSavePassword').on('click', function () {
+                var userId = $('#cpUserId').val();
+                var userName = $('#cpUserName').val();
+                var newPassword = $('#cpNewPassword').val();
+                var confirmPassword = $('#cpConfirmPassword').val();
+
+                if (!newPassword || newPassword.length < 6) {
+                    $('#cpErrorMessage').removeClass('d-none').text('Password must be at least 6 characters.');
+                    return;
+                }
+
+                if (newPassword !== confirmPassword) {
+                    $('#cpErrorMessage').removeClass('d-none').text('Passwords do not match.');
+                    return;
+                }
+
+                $.ajax({
+                    url: '/User/ChangePassword',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        UserID: parseInt(userId),
+                        UserName: userName,
+                        NewPassword: newPassword,
+                        ConfirmPassword: confirmPassword
+                    }),
+                    success: function (res) {
+                        if (res.success) {
+                            $('#changePasswordModal').modal('hide');
+                            ShowNotification(1, res.message);
+                        } else {
+                            $('#cpErrorMessage').removeClass('d-none').text(res.message);
+                        }
+                    },
+                    error: function () {
+                        $('#cpErrorMessage').removeClass('d-none').text("An error occurred while changing password.");
+                    }
+                });
+            });
+        });
+    </script>
+}
+

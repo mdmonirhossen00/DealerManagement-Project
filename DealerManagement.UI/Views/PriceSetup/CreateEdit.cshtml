@@ -1,0 +1,144 @@
+@model DealerManagement.Model.Entities.PriceSetup
+@{
+    var isUpdate = Model.Operation == "update";
+    ViewData["Title"] = isUpdate ? "Edit Price Setup" : "New Price Setup";
+}
+
+@Html.Partial("_Header", new DealerManagement.Model.Common.HeaderModel()
+{
+    HeaderName = (isUpdate ? "Edit" : "Create") + " Price Setup",
+    BreadCrums = new Dictionary<string, string>()
+    {
+        {"/PriceSetup", "Price Setup"},
+        {"", isUpdate ? "Edit" : "Create"}
+    }
+})
+
+<link href="~/css/button.css" rel="stylesheet" />
+
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header p-2">
+            <button type="button" class="button btnSave @(isUpdate ? "sslUpdate" : "sslSave")" id="btnSavePrice">
+                <i class="fas fa-save mr-1"></i> @(isUpdate ? "Update" : "Save")
+            </button>
+            <a href="/PriceSetup/Index" class="btn btn-secondary btn-sm float-right ml-2">
+                <i class="fas fa-arrow-left mr-1"></i> Back to List
+            </a>
+            @if (isUpdate)
+            {
+                <a href="/PriceSetup/Create" class="button NewButton addNewButton float-right">
+                    <i class="fas fa-plus mr-1"></i> New
+                </a>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <div class="card card-secondary">
+        <div class="card-header">
+            <h3 class="card-title">Price Information</h3>
+        </div>
+        <form id="frmPriceSetup">
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(m => m.PriceSetupID)
+            @Html.HiddenFor(m => m.Operation)
+
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        <label>Product Variant <span class="text-danger">*</span></label>
+                        <select id="ProductID" name="ProductID" class="form-control" data-selected="@Model.ProductID" required>
+                            <option value="">----- Select Product -----</option>
+                        </select>
+                        @Html.ValidationMessageFor(m => m.ProductID, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="col-md-6 form-group">
+                        @Html.LabelFor(m => m.PriceType) <span class="text-danger">*</span>
+                        <select id="PriceType" name="PriceType" class="form-control" required>
+                            <option value="Dealer" selected="@(Model.PriceType == "Dealer")">Dealer Price</option>
+                            <option value="Retail" selected="@(Model.PriceType == "Retail")">Retail Price</option>
+                            <option value="Wholesale" selected="@(Model.PriceType == "Wholesale")">Wholesale Price</option>
+                            <option value="Purchase" selected="@(Model.PriceType == "Purchase")">Purchase Price</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.UnitPrice) <span class="text-danger">*</span>
+                        @Html.TextBoxFor(m => m.UnitPrice, new { @class = "form-control", type = "number", step = "0.01", required = "required" })
+                        @Html.ValidationMessageFor(m => m.UnitPrice, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.EffectiveFrom) <span class="text-danger">*</span>
+                        <input type="date" id="EffectiveFrom" name="EffectiveFrom" class="form-control" value="@Model.EffectiveFrom.ToString("yyyy-MM-dd")" required />
+                    </div>
+
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.EffectiveTo)
+                        <input type="date" id="EffectiveTo" name="EffectiveTo" class="form-control" value="@(Model.EffectiveTo?.ToString("yyyy-MM-dd"))" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        <div class="custom-control custom-switch mt-2">
+                            @Html.CheckBoxFor(m => m.IsActive, new { @class = "custom-control-input", id = "customSwitchPriceActive" })
+                            <label class="custom-control-label" for="customSwitchPriceActive">Active</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/CommonComboLoader.js"></script>
+    <script>
+        $(document).ready(function () {
+            LoadCombo("ProductID", '/Common/GetProducts');
+
+            var selProduct = $('#ProductID').attr('data-selected');
+            if (selProduct && selProduct > 0) {
+                $('#ProductID').val(selProduct);
+            }
+
+            $('#btnSavePrice').click(function () {
+                var form = $('#frmPriceSetup');
+                if (!form[0].checkValidity()) {
+                    form[0].reportValidity();
+                    return;
+                }
+
+                var formData = form.serialize();
+
+                $.ajax({
+                    url: '/PriceSetup/CreateEdit',
+                    type: 'POST',
+                    data: formData,
+                    success: function (res) {
+                        if (res.status === "Success" || res.status === 200 || res.status === "200") {
+                            toastr.success(res.message);
+                            if ($('#Operation').val() === 'add' && res.data) {
+                                $('#PriceSetupID').val(res.data.priceSetupID);
+                                $('#Operation').val('update');
+                                $('#btnSavePrice').html('<i class="fas fa-save mr-1"></i> Update').removeClass('sslSave').addClass('sslUpdate');
+                            }
+                        } else {
+                            toastr.error(res.message);
+                        }
+                    },
+                    error: function () {
+                        toastr.error("An unexpected error occurred.");
+                    }
+                });
+            });
+        });
+    </script>
+}
+

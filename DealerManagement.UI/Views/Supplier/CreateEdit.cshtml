@@ -1,0 +1,146 @@
+@model DealerManagement.Model.Entities.Supplier
+@{
+    var isUpdate = Model.Operation == "update";
+    ViewData["Title"] = isUpdate ? "Edit Supplier" : "New Supplier";
+}
+
+@Html.Partial("_Header", new DealerManagement.Model.Common.HeaderModel()
+{
+    HeaderName = (isUpdate ? "Edit" : "Create") + " Supplier",
+    BreadCrums = new Dictionary<string, string>()
+    {
+        {"/Supplier", "Supplier"},
+        {"", isUpdate ? "Edit" : "Create"}
+    }
+})
+
+<link href="~/css/button.css" rel="stylesheet" />
+
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header p-2">
+            <button type="button" class="button btnSave @(isUpdate ? "sslUpdate" : "sslSave")" id="btnSaveSupplier">
+                <i class="fas fa-save mr-1"></i> @(isUpdate ? "Update" : "Save")
+            </button>
+            <a href="/Supplier/Index" class="btn btn-secondary btn-sm float-right ml-2">
+                <i class="fas fa-arrow-left mr-1"></i> Back to List
+            </a>
+            @if (isUpdate)
+            {
+                <a href="/Supplier/Create" class="button NewButton addNewButton float-right">
+                    <i class="fas fa-plus mr-1"></i> New
+                </a>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <div class="card card-secondary">
+        <div class="card-header">
+            <h3 class="card-title">Supplier Details</h3>
+        </div>
+        <form id="frmSupplier">
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(m => m.SupplierID)
+            @Html.HiddenFor(m => m.Operation)
+
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        @Html.LabelFor(m => m.SupplierCode) <span class="text-danger">*</span>
+                        @Html.TextBoxFor(m => m.SupplierCode, new { @class = "form-control", placeholder = "e.g. SUP-001", required = "required" })
+                        @Html.ValidationMessageFor(m => m.SupplierCode, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="col-md-6 form-group">
+                        @Html.LabelFor(m => m.SupplierName) <span class="text-danger">*</span>
+                        @Html.TextBoxFor(m => m.SupplierName, new { @class = "form-control", placeholder = "Supplier company / Vendor name", required = "required" })
+                        @Html.ValidationMessageFor(m => m.SupplierName, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.ContactPerson)
+                        @Html.TextBoxFor(m => m.ContactPerson, new { @class = "form-control", placeholder = "Key contact person" })
+                    </div>
+
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.Phone)
+                        @Html.TextBoxFor(m => m.Phone, new { @class = "form-control", placeholder = "Contact phone number" })
+                    </div>
+
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.Email)
+                        @Html.TextBoxFor(m => m.Email, new { @class = "form-control", type = "email", placeholder = "Email address" })
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.TaxRegistrationNo)
+                        @Html.TextBoxFor(m => m.TaxRegistrationNo, new { @class = "form-control", placeholder = "Tax / VAT / BIN No" })
+                    </div>
+
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.OpeningDate)
+                        <input type="date" id="OpeningDate" name="OpeningDate" class="form-control" value="@(Model.OpeningDate?.ToString("yyyy-MM-dd"))" />
+                    </div>
+
+                    <div class="col-md-4 form-group">
+                        @Html.LabelFor(m => m.Address)
+                        @Html.TextBoxFor(m => m.Address, new { @class = "form-control", placeholder = "Business / Factory Address" })
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        <div class="custom-control custom-switch mt-2">
+                            @Html.CheckBoxFor(m => m.IsActive, new { @class = "custom-control-input", id = "customSwitchSupplierActive" })
+                            <label class="custom-control-label" for="customSwitchSupplierActive">Active</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#btnSaveSupplier').click(function () {
+                var form = $('#frmSupplier');
+                if (!form[0].checkValidity()) {
+                    form[0].reportValidity();
+                    return;
+                }
+
+                var formData = form.serialize();
+
+                $.ajax({
+                    url: '/Supplier/CreateEdit',
+                    type: 'POST',
+                    data: formData,
+                    success: function (res) {
+                        if (res.status === "Success" || res.status === 200 || res.status === "200") {
+                            toastr.success(res.message);
+                            if ($('#Operation').val() === 'add' && res.data) {
+                                $('#SupplierID').val(res.data.supplierID);
+                                $('#Operation').val('update');
+                                $('#btnSaveSupplier').html('<i class="fas fa-save mr-1"></i> Update').removeClass('sslSave').addClass('sslUpdate');
+                            }
+                        } else {
+                            toastr.error(res.message);
+                        }
+                    },
+                    error: function () {
+                        toastr.error("An unexpected error occurred.");
+                    }
+                });
+            });
+        });
+    </script>
+}
+

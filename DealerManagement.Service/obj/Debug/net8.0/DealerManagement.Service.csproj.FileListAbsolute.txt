@@ -1,0 +1,17 @@
+D:\DealerManagement\DealerManagement.Service\bin\Debug\net8.0\DealerManagement.Service.deps.json
+D:\DealerManagement\DealerManagement.Service\bin\Debug\net8.0\DealerManagement.Service.dll
+D:\DealerManagement\DealerManagement.Service\bin\Debug\net8.0\DealerManagement.Service.pdb
+D:\DealerManagement\DealerManagement.Service\bin\Debug\net8.0\DealerManagement.Model.dll
+D:\DealerManagement\DealerManagement.Service\bin\Debug\net8.0\DealerManagement.Repository.dll
+D:\DealerManagement\DealerManagement.Service\bin\Debug\net8.0\DealerManagement.Model.pdb
+D:\DealerManagement\DealerManagement.Service\bin\Debug\net8.0\DealerManagement.Repository.pdb
+D:\DealerManagement\DealerManagement.Service\obj\Debug\net8.0\DealerManagement.Service.csproj.AssemblyReference.cache
+D:\DealerManagement\DealerManagement.Service\obj\Debug\net8.0\DealerManagement.Service.GeneratedMSBuildEditorConfig.editorconfig
+D:\DealerManagement\DealerManagement.Service\obj\Debug\net8.0\DealerManagement.Service.AssemblyInfoInputs.cache
+D:\DealerManagement\DealerManagement.Service\obj\Debug\net8.0\DealerManagement.Service.AssemblyInfo.cs
+D:\DealerManagement\DealerManagement.Service\obj\Debug\net8.0\DealerManagement.Service.csproj.CoreCompileInputs.cache
+D:\DealerManagement\DealerManagement.Service\obj\Debug\net8.0\DealerMa.70A05DA6.Up2Date
+D:\DealerManagement\DealerManagement.Service\obj\Debug\net8.0\DealerManagement.Service.dll
+D:\DealerManagement\DealerManagement.Service\obj\Debug\net8.0\refint\DealerManagement.Service.dll
+D:\DealerManagement\DealerManagement.Service\obj\Debug\net8.0\DealerManagement.Service.pdb
+D:\DealerManagement\DealerManagement.Service\obj\Debug\net8.0\ref\DealerManagement.Service.dll

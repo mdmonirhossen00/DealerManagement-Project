@@ -1,0 +1,21 @@
+﻿.table-box {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+.table-style {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+    .table-style th,
+    .table-style td {
+        border: 1px solid black;
+        padding: 8px;
+        text-align: left;
+    }
+
+    .table-style th {
+        background-color: #ddd;
+        font-weight: bold;
+    }
