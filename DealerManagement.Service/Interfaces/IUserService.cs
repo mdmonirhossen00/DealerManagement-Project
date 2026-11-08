@@ -15,6 +15,7 @@ namespace DealerManagement.Service.Interfaces
         Task<ResultModel<UserVM>> UpdateAsync(UserVM model, string updatedBy);
         Task<ResultModel<bool>> ToggleStatusAsync(int userId, string updatedBy);
         Task<ResultModel<bool>> ChangePasswordAsync(ChangePasswordVM model, string updatedBy);
+        Task<ResultModel<bool>> AssignRoleAsync(int userId, int roleId, string updatedBy);
     }
 }
 

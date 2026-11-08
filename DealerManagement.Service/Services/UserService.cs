@@ -137,6 +137,7 @@ namespace DealerManagement.Service.Services
                     PhoneNumber = model.PhoneNumber?.Trim(),
                     PasswordHash = passwordHash,
                     IsActive = model.IsActive,
+                    RoleID = model.RoleID,
                     CreatedAt = DateTime.Now,
                     CreatedBy = createdBy
                 };
@@ -189,6 +190,7 @@ namespace DealerManagement.Service.Services
                 existing.Email = model.Email?.Trim();
                 existing.PhoneNumber = model.PhoneNumber?.Trim();
                 existing.IsActive = model.IsActive;
+                existing.RoleID = model.RoleID;
                 existing.UpdatedBy = updatedBy;
 
                 await _userRepository.UpdateAsync(existing);
@@ -305,6 +307,29 @@ namespace DealerManagement.Service.Services
             }
         }
 
+        public async Task<ResultModel<bool>> AssignRoleAsync(int userId, int roleId, string updatedBy)
+        {
+            try
+            {
+                bool success = await _userRepository.AssignRoleToUserAsync(userId, roleId, updatedBy);
+                return new ResultModel<bool>
+                {
+                    Status = success ? Status.Success : Status.Fail,
+                    Message = success ? "Role assigned to user successfully." : "Failed to assign role.",
+                    Data = success
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ResultModel<bool>
+                {
+                    Status = Status.Fail,
+                    Message = ex.Message,
+                    Data = false
+                };
+            }
+        }
+
         private static UserVM MapToViewModel(User user)
         {
             return new UserVM
@@ -315,6 +340,8 @@ namespace DealerManagement.Service.Services
                 Email = user.Email,
                 PhoneNumber = user.PhoneNumber,
                 IsActive = user.IsActive,
+                RoleID = user.RoleID,
+                RoleName = user.RoleName,
                 CreatedAt = user.CreatedAt
             };
         }

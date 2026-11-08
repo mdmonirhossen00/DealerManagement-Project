@@ -63,7 +63,9 @@ namespace DealerManagement.UI.Controllers
                 new Claim(ClaimTypes.Name, user.UserName),
                 new Claim("FullName", user.FullName),
                 new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
-                new Claim(ClaimTypes.MobilePhone, user.PhoneNumber ?? string.Empty)
+                new Claim(ClaimTypes.MobilePhone, user.PhoneNumber ?? string.Empty),
+                new Claim(ClaimTypes.Role, user.RoleName ?? "User"),
+                new Claim("RoleId", (user.RoleID ?? 0).ToString())
             };
 
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);

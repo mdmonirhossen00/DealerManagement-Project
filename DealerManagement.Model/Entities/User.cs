@@ -31,6 +31,11 @@ namespace DealerManagement.Model.Entities
         [Display(Name = "Active")]
         public bool IsActive { get; set; } = true;
 
+        [Display(Name = "Role")]
+        public int? RoleID { get; set; }
+
+        public string? RoleName { get; set; }
+
         [Display(Name = "Created At")]
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 

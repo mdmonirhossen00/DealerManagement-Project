@@ -1,0 +1,121 @@
+@{
+    ViewData["Title"] = "Role Menu Permissions";
+}
+
+@Html.Partial("_Header", new DealerManagement.Model.Common.HeaderModel()
+{
+    HeaderName = "Role Menu Permissions",
+    BreadCrums = new Dictionary<string, string>()
+    {
+        {"/RoleMenu", "Role Menu"},
+        {"", "Index"}
+    }
+})
+
+<link href="~/css/button.css" rel="stylesheet" />
+
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header p-2">
+            <a href="/Role/Index" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-left mr-1"></i> Back to Role Management
+            </a>
+            <a href="/Role/Create" class="button NewButton addNewButton ml-2">
+                <i class="fas fa-plus mr-1"></i> New Role
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <div class="card card-secondary">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-shield-alt mr-1"></i> Select Role to Configure Permissions</h3>
+        </div>
+        <div class="card-body">
+            <div id="RoleMenuGrid"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            var gridDataSource = new kendo.data.DataSource({
+                type: "json",
+                serverPaging: true,
+                serverSorting: true,
+                serverFiltering: true,
+                pageSize: 10,
+                transport: {
+                    read: {
+                        url: "/RoleMenu/GetGridData",
+                        type: "POST",
+                        dataType: "json"
+                    }
+                },
+                schema: {
+                    data: "items",
+                    total: "totalCount",
+                    model: {
+                        id: "id",
+                        fields: {
+                            id: { type: "number" },
+                            name: { type: "string" },
+                            description: { type: "string" },
+                            assignedMenuCount: { type: "number" },
+                            isActive: { type: "boolean" }
+                        }
+                    }
+                }
+            });
+
+            $("#RoleMenuGrid").kendoGrid({
+                dataSource: gridDataSource,
+                pageable: {
+                    refresh: true,
+                    pageSizes: [10, 20, 50, "all"],
+                    buttonCount: 5
+                },
+                sortable: true,
+                filterable: true,
+                columns: [
+                    {
+                        title: "Action",
+                        width: "160px",
+                        headerAttributes: { style: "text-align: center;" },
+                        attributes: { style: "text-align: center;" },
+                        template: function (dataItem) {
+                            return `<a href='/RoleMenu/RoleMenuEdit?roleId=${dataItem.id}' class='btn btn-primary btn-sm' title='Manage Permissions'>
+                                        <i class='fas fa-shield-alt mr-1'></i> Permissions
+                                    </a>`;
+                        }
+                    },
+                    { field: "name", title: "Role Name", width: "220px" },
+                    { field: "description", title: "Description" },
+                    {
+                        field: "assignedMenuCount",
+                        title: "Authorized Menus",
+                        width: "160px",
+                        attributes: { style: "text-align: center;" },
+                        template: function (dataItem) {
+                            return `<span class='badge badge-info px-2 py-1'><i class='fas fa-check-double mr-1'></i> ${dataItem.assignedMenuCount} Menus</span>`;
+                        }
+                    },
+                    {
+                        field: "isActive",
+                        title: "Role Status",
+                        width: "120px",
+                        attributes: { style: "text-align: center;" },
+                        template: function (dataItem) {
+                            return dataItem.isActive 
+                                ? "<span class='badge badge-success px-2 py-1'><i class='fas fa-check mr-1'></i> Active</span>" 
+                                : "<span class='badge badge-secondary px-2 py-1'><i class='fas fa-times mr-1'></i> Inactive</span>";
+                        }
+                    }
+                ]
+            });
+        });
+    </script>
+}
+

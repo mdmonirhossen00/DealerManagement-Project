@@ -1,0 +1,71 @@
+## ==========================================
+## Visual Studio & ASP.NET Core .gitignore
+## ==========================================
+
+# Visual Studio Cache, Temp & Workspaces
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+*.ide
+*.vsidx
+*.dtbcache.v2
+*.futdcache.v2
+
+# Build and Compilation Output
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+/[Bb]uild/
+
+# Output Binaries & Symbols
+*.dll
+*.pdb
+*.exe
+*.manifest
+
+# MSBuild / Roslyn Generated & Temp Files
+*.FileListAbsolute.txt
+*.AssemblyReference.cache
+*.CoreCompileInputs.cache
+*.AssemblyInfoInputs.cache
+*.assets.cache
+*.sourcelink.json
+*.cache
+
+# NuGet Packages & Restore Artifacts
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.assets.json
+project.nuget.cache
+
+# ASP.NET Core Static Web Assets Build Outputs
+staticwebassets/
+staticwebassets.build.json
+staticwebassets.build.endpoints.json
+*.staticwebassets.*
+
+# Publishing & Deployment Artifacts
+/publish/
+*.azurePubxml
+*.pubxml
+*.publishproj
+
+# Test & Code Coverage
+/TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
+# Log Files
+*.log
+/[Ll]og/
+/[Ll]ogs/
+
+# OS Generated Files
+Thumbs.db
+[Dd]esktop.ini
+.DS_Store

@@ -43,11 +43,18 @@
             {
                 var children = menuList.Where(m => m.ParentId == menuItem.Id).OrderBy(m => m.DisplayOrder).ToList();
                 var hasSubmenu = children.Any();
+
+                // If parent has no URL and no children are authorized for this user, do not render empty header
+                if ((string.IsNullOrEmpty(menuItem.Url) || menuItem.Url == "#") && !hasSubmenu)
+                {
+                    continue;
+                }
+
                 var totalChild = children.Count > 0 ? children.Count.ToString() : string.Empty;
 
-                <li class="nav-item">
+                <li class="nav-item @(hasSubmenu ? "has-treeview" : "")">
                     <a style="cursor:pointer !important;" 
-                       class="nav-link @menuItem.Name @if (hasSubmenu) { <text>has-treeview</text> }" 
+                       class="nav-link @(hasSubmenu ? "has-treeview" : "")" 
                        href="@(string.IsNullOrEmpty(menuItem.Url) || menuItem.Url == "#" ? "javascript:void(0);" : menuItem.Url)" 
                        data-menu-id="@menuItem.Id">
                         <i class="@menuItem.IconClass mr-2"></i>

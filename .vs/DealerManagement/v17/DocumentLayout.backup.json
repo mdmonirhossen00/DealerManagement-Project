@@ -3,6 +3,10 @@
   "WorkspaceRootPath": "D:\\DealerManagement\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{B66E9897-025D-4480-A849-E345596FE8B6}|DealerManagement.UI\\DealerManagement.UI.csproj|d:\\dealermanagement\\dealermanagement.ui\\controllers\\homecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B66E9897-025D-4480-A849-E345596FE8B6}|DealerManagement.UI\\DealerManagement.UI.csproj|solutionrelative:dealermanagement.ui\\controllers\\homecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{B66E9897-025D-4480-A849-E345596FE8B6}|DealerManagement.UI\\DealerManagement.UI.csproj|d:\\dealermanagement\\dealermanagement.ui\\views\\shared\\_header.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
       "RelativeMoniker": "D:0:0:{B66E9897-025D-4480-A849-E345596FE8B6}|DealerManagement.UI\\DealerManagement.UI.csproj|solutionrelative:dealermanagement.ui\\views\\shared\\_header.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
@@ -21,10 +25,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{5A046F53-A876-41A5-8F91-A8FF1924331B}|DealerManagement.Repository\\DealerManagement.Repository.csproj|d:\\dealermanagement\\dealermanagement.repository\\repositories\\menurepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{5A046F53-A876-41A5-8F91-A8FF1924331B}|DealerManagement.Repository\\DealerManagement.Repository.csproj|solutionrelative:dealermanagement.repository\\repositories\\menurepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{B66E9897-025D-4480-A849-E345596FE8B6}|DealerManagement.UI\\DealerManagement.UI.csproj|d:\\dealermanagement\\dealermanagement.ui\\controllers\\homecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B66E9897-025D-4480-A849-E345596FE8B6}|DealerManagement.UI\\DealerManagement.UI.csproj|solutionrelative:dealermanagement.ui\\controllers\\homecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{B66E9897-025D-4480-A849-E345596FE8B6}|DealerManagement.UI\\DealerManagement.UI.csproj|d:\\dealermanagement\\dealermanagement.ui\\views\\customerorder\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
@@ -54,11 +54,11 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 2,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "_Header.cshtml",
               "DocumentMoniker": "D:\\DealerManagement\\DealerManagement.UI\\Views\\Shared\\_Header.cshtml",
               "RelativeDocumentMoniker": "DealerManagement.UI\\Views\\Shared\\_Header.cshtml",
@@ -71,7 +71,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 3,
               "Title": "_Layout.cshtml",
               "DocumentMoniker": "D:\\DealerManagement\\DealerManagement.UI\\Views\\Shared\\_Layout.cshtml",
               "RelativeDocumentMoniker": "DealerManagement.UI\\Views\\Shared\\_Layout.cshtml",
@@ -79,25 +79,24 @@
               "RelativeToolTip": "DealerManagement.UI\\Views\\Shared\\_Layout.cshtml",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAJIAAAAKAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-11-01T17:44:36.602Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-11-01T17:44:36.602Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 0,
               "Title": "HomeController.cs",
               "DocumentMoniker": "D:\\DealerManagement\\DealerManagement.UI\\Controllers\\HomeController.cs",
               "RelativeDocumentMoniker": "DealerManagement.UI\\Controllers\\HomeController.cs",
               "ToolTip": "D:\\DealerManagement\\DealerManagement.UI\\Controllers\\HomeController.cs",
               "RelativeToolTip": "DealerManagement.UI\\Controllers\\HomeController.cs",
-              "ViewState": "AgIAAA0AAAAAAAAAAAAzwBsAAAA/AAAAAAAAAA==",
+              "ViewState": "AgIAABAAAAAAAAAAAAAzwBsAAAARAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-11-01T17:25:40.373Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "CreateEdit.cshtml",
               "DocumentMoniker": "D:\\DealerManagement\\DealerManagement.UI\\Views\\CustomerOrder\\CreateEdit.cshtml",
               "RelativeDocumentMoniker": "DealerManagement.UI\\Views\\CustomerOrder\\CreateEdit.cshtml",
@@ -105,12 +104,11 @@
               "RelativeToolTip": "DealerManagement.UI\\Views\\CustomerOrder\\CreateEdit.cshtml",
               "ViewState": "AgIAADwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-10-30T19:19:19.921Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-10-30T19:19:19.921Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 5,
               "Title": "MenuRepository.cs",
               "DocumentMoniker": "D:\\DealerManagement\\DealerManagement.Repository\\Repositories\\MenuRepository.cs",
               "RelativeDocumentMoniker": "DealerManagement.Repository\\Repositories\\MenuRepository.cs",
@@ -118,12 +116,11 @@
               "RelativeToolTip": "DealerManagement.Repository\\Repositories\\MenuRepository.cs",
               "ViewState": "AgIAABkAAAAAAAAAAAAqwDYAAAA8AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-10-30T18:02:02.62Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-10-30T18:02:02.62Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 4,
               "Title": "Index.cshtml",
               "DocumentMoniker": "D:\\DealerManagement\\DealerManagement.UI\\Views\\Login\\Index.cshtml",
               "RelativeDocumentMoniker": "DealerManagement.UI\\Views\\Login\\Index.cshtml",
@@ -131,8 +128,7 @@
               "RelativeToolTip": "DealerManagement.UI\\Views\\Login\\Index.cshtml",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-10-30T17:59:36.939Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-10-30T17:59:36.939Z"
             },
             {
               "$type": "Document",

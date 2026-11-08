@@ -9,6 +9,7 @@ namespace DealerManagement.Service.Interfaces
     {
         Task<ResultModel<List<Menu>>> GetActiveMenusAsync();
         Task<ResultModel<List<Menu>>> GetAllAsync();
+        Task<ResultModel<List<Menu>>> GetAuthorizedMenusForUserAsync(int userId);
     }
 }
 

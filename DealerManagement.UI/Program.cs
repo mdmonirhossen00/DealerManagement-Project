@@ -3,19 +3,29 @@ using DealerManagement.Repository.Interfaces;
 using DealerManagement.Repository.Repositories;
 using DealerManagement.Service.Interfaces;
 using DealerManagement.Service.Services;
+using DealerManagement.UI.Filters;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
-builder.Services.AddControllersWithViews()
+builder.Services.AddControllersWithViews(options =>
+    {
+        // Global Server-Side Menu Authorization Filter
+        options.Filters.Add<MenuAuthorizeFilter>();
+    })
     .AddJsonOptions(options =>
     {
         // Keep property names PascalCase or camelCase friendly
         options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
     });
 
+// Register Authorization Filter
+builder.Services.AddScoped<MenuAuthorizeFilter>();
+
 // Register Repositories
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+builder.Services.AddScoped<IRoleMenuRepository, RoleMenuRepository>();
 builder.Services.AddScoped<IMenuRepository, MenuRepository>();
 builder.Services.AddScoped<ICommonRepository, CommonRepository>();
 
@@ -46,6 +56,8 @@ builder.Services.AddScoped<ISupplierFinancialRepository, SupplierFinancialReposi
 // Register Services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IRoleService, RoleService>();
+builder.Services.AddScoped<IRoleMenuService, RoleMenuService>();
 builder.Services.AddScoped<IMenuService, MenuService>();
 builder.Services.AddScoped<ICommonService, CommonService>();
 
@@ -80,7 +92,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.Name = "DealerManagement.Auth";
         options.LoginPath = "/Login/Index";
         options.LogoutPath = "/Login/LogOff";
-        options.AccessDeniedPath = "/Login/Index";
+        options.AccessDeniedPath = "/Home/AccessDenied";
         options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
         options.SlidingExpiration = true;
     });

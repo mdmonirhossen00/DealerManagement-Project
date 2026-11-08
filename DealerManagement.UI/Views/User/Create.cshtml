@@ -67,6 +67,23 @@
 
                     <div class="row">
                         <div class="col-md-6 form-group">
+                            <label asp-for="RoleID">Assign Role</label>
+                            <select asp-for="RoleID" class="form-control">
+                                <option value="">-- Select Role --</option>
+                                @if (ViewBag.Roles != null)
+                                {
+                                    foreach (var role in (List<DealerManagement.Model.Common.DropdownModel>)ViewBag.Roles)
+                                    {
+                                        <option value="@role.Name" selected="@(Model.RoleID?.ToString() == role.Name)">@role.Value</option>
+                                    }
+                                }
+                            </select>
+                            <span asp-validation-for="RoleID" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 form-group">
                             <label asp-for="Password">Password <span class="text-danger">*</span></label>
                             <input asp-for="Password" type="password" class="form-control" placeholder="Minimum 6 characters" required />
                             <span asp-validation-for="Password" class="text-danger small"></span>

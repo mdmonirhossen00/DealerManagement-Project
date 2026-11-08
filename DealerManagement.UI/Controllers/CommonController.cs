@@ -9,10 +9,19 @@ namespace DealerManagement.UI.Controllers
     public class CommonController : Controller
     {
         private readonly ICommonService _commonService;
+        private readonly IRoleService _roleService;
 
-        public CommonController(ICommonService commonService)
+        public CommonController(ICommonService commonService, IRoleService roleService)
         {
             _commonService = commonService;
+            _roleService = roleService;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetRoles()
+        {
+            var res = await _roleService.GetRolesDropdownAsync();
+            return Json(res.Data ?? new());
         }
 
         [HttpGet]

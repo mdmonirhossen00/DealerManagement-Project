@@ -106,6 +106,7 @@
                             fullName: { type: "string" },
                             email: { type: "string" },
                             phoneNumber: { type: "string" },
+                            roleName: { type: "string" },
                             isActive: { type: "boolean" },
                             createdAt: { type: "date" }
                         }
@@ -150,6 +151,16 @@
                     { field: "userID", title: "ID", width: 60, attributes: { style: "text-align: center;" } },
                     { field: "userName", title: "Username", width: 140 },
                     { field: "fullName", title: "Full Name", width: 180 },
+                    { 
+                        field: "roleName", 
+                        title: "Role", 
+                        width: 130, 
+                        template: function (dataItem) {
+                            return dataItem.roleName 
+                                ? "<span class='badge badge-info px-2 py-1'><i class='fas fa-user-tag mr-1'></i>" + dataItem.roleName + "</span>" 
+                                : "<span class='badge badge-light border text-muted'>Not Assigned</span>";
+                        }
+                    },
                     { field: "email", title: "Email", width: 180, template: "#= email ? email : '-' #" },
                     { field: "phoneNumber", title: "Phone", width: 130, template: "#= phoneNumber ? phoneNumber : '-' #" },
                     {

@@ -1,7 +1,10 @@
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using DealerManagement.Model.Entities;
 using DealerManagement.Service.Interfaces;
 
 namespace DealerManagement.UI.Controllers
@@ -25,10 +28,28 @@ namespace DealerManagement.UI.Controllers
         [HttpGet]
         public async Task<IActionResult> _leftSideBar()
         {
-            var result = await _menuService.GetActiveMenusAsync();
-            var menus = result.Data ?? new();
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var menus = new List<Menu>();
+
+            if (int.TryParse(userIdClaim, out int userId))
+            {
+                var result = await _menuService.GetAuthorizedMenusForUserAsync(userId);
+                menus = result.Data ?? new List<Menu>();
+            }
+            else
+            {
+                var result = await _menuService.GetActiveMenusAsync();
+                menus = result.Data ?? new List<Menu>();
+            }
+
             ViewBag.ShouldRenderMenu = menus.Count > 0;
             return PartialView("_leftSideBar", menus);
+        }
+
+        [HttpGet]
+        public IActionResult AccessDenied()
+        {
+            return View("~/Views/Shared/AccessDenied.cshtml");
         }
 
         [AllowAnonymous]

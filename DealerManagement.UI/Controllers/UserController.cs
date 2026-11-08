@@ -14,10 +14,12 @@ namespace DealerManagement.UI.Controllers
     public class UserController : Controller
     {
         private readonly IUserService _userService;
+        private readonly IRoleService _roleService;
 
-        public UserController(IUserService userService)
+        public UserController(IUserService userService, IRoleService roleService)
         {
             _userService = userService;
+            _roleService = roleService;
         }
 
         [HttpGet]
@@ -41,9 +43,11 @@ namespace DealerManagement.UI.Controllers
         }
 
         [HttpGet]
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
             var model = new UserVM { IsActive = true };
+            var rolesResult = await _roleService.GetRolesDropdownAsync();
+            ViewBag.Roles = rolesResult.Data ?? new();
             return View(model);
         }
 
@@ -53,6 +57,8 @@ namespace DealerManagement.UI.Controllers
         {
             if (!ModelState.IsValid)
             {
+                var rolesResult = await _roleService.GetRolesDropdownAsync();
+                ViewBag.Roles = rolesResult.Data ?? new();
                 return View(model);
             }
 
@@ -65,6 +71,8 @@ namespace DealerManagement.UI.Controllers
                 return RedirectToAction("Index");
             }
 
+            var rolesRes = await _roleService.GetRolesDropdownAsync();
+            ViewBag.Roles = rolesRes.Data ?? new();
             ModelState.AddModelError(string.Empty, result.Message);
             return View(model);
         }
@@ -79,6 +87,9 @@ namespace DealerManagement.UI.Controllers
                 return RedirectToAction("Index");
             }
 
+            var rolesResult = await _roleService.GetRolesDropdownAsync();
+            ViewBag.Roles = rolesResult.Data ?? new();
+
             return View(result.Data);
         }
 
@@ -88,6 +99,8 @@ namespace DealerManagement.UI.Controllers
         {
             if (!ModelState.IsValid)
             {
+                var rolesResult = await _roleService.GetRolesDropdownAsync();
+                ViewBag.Roles = rolesResult.Data ?? new();
                 return View(model);
             }
 
@@ -100,6 +113,8 @@ namespace DealerManagement.UI.Controllers
                 return RedirectToAction("Index");
             }
 
+            var rolesRes = await _roleService.GetRolesDropdownAsync();
+            ViewBag.Roles = rolesRes.Data ?? new();
             ModelState.AddModelError(string.Empty, result.Message);
             return View(model);
         }
@@ -126,4 +141,3 @@ namespace DealerManagement.UI.Controllers
         }
     }
 }
-

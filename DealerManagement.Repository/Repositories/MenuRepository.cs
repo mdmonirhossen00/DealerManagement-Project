@@ -331,7 +331,9 @@ namespace DealerManagement.Repository.Repositories
                     ("Supplier Opening Balance", "SupplierOpeningBalance", "Index", "/SupplierOpeningBalance/Index", "fas fa-book", financialsId, 6, "Financials"),
 
                     // 7. Administration
-                    ("User Management", "User", "Index", "/User/Index", "fas fa-users-cog", adminId, 1, "Admin")
+                    ("User Management", "User", "Index", "/User/Index", "fas fa-users-cog", adminId, 1, "Admin"),
+                    ("Role Management", "Role", "Index", "/Role/Index", "fas fa-user-shield", adminId, 2, "Admin"),
+                    ("Role Menu Permission", "RoleMenu", "Index", "/RoleMenu/Index", "fas fa-shield-alt", adminId, 3, "Admin")
                 };
 
                 foreach (var child in children)

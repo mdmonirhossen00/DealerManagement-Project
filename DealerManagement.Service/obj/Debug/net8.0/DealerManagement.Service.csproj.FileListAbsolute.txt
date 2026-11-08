@@ -1,3 +1,6 @@
+D:\DealerManagement\DealerManagement.UI\bin\TestBuild\DealerManagement.Service.deps.json
+D:\DealerManagement\DealerManagement.UI\bin\TestBuild\DealerManagement.Service.dll
+D:\DealerManagement\DealerManagement.UI\bin\TestBuild\DealerManagement.Service.pdb
 D:\DealerManagement\DealerManagement.Service\bin\Debug\net8.0\DealerManagement.Service.deps.json
 D:\DealerManagement\DealerManagement.Service\bin\Debug\net8.0\DealerManagement.Service.dll
 D:\DealerManagement\DealerManagement.Service\bin\Debug\net8.0\DealerManagement.Service.pdb
@@ -10,6 +13,7 @@ D:\DealerManagement\DealerManagement.Service\obj\Debug\net8.0\DealerManagement.S
 D:\DealerManagement\DealerManagement.Service\obj\Debug\net8.0\DealerManagement.Service.AssemblyInfoInputs.cache
 D:\DealerManagement\DealerManagement.Service\obj\Debug\net8.0\DealerManagement.Service.AssemblyInfo.cs
 D:\DealerManagement\DealerManagement.Service\obj\Debug\net8.0\DealerManagement.Service.csproj.CoreCompileInputs.cache
+D:\DealerManagement\DealerManagement.Service\obj\Debug\net8.0\DealerManagement.Service.sourcelink.json
 D:\DealerManagement\DealerManagement.Service\obj\Debug\net8.0\DealerMa.70A05DA6.Up2Date
 D:\DealerManagement\DealerManagement.Service\obj\Debug\net8.0\DealerManagement.Service.dll
 D:\DealerManagement\DealerManagement.Service\obj\Debug\net8.0\refint\DealerManagement.Service.dll

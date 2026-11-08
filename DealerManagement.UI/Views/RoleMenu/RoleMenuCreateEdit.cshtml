@@ -1,0 +1,281 @@
+@model DealerManagement.Model.ViewModels.RoleMenuVM
+@{
+    ViewData["Title"] = "Role Menu Permissions";
+}
+
+@Html.Partial("_Header", new DealerManagement.Model.Common.HeaderModel()
+{
+    HeaderName = "Role Menu Permission Assignment",
+    BreadCrums = new Dictionary<string, string>()
+    {
+        {"/RoleMenu", "Role Menu"},
+        {"", "Permissions"}
+    }
+})
+
+<link href="~/css/button.css" rel="stylesheet" />
+
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header p-2">
+            <button type="button" class="button btnsave sslSave" id="btnSavePermissions">
+                <i class="fas fa-save mr-1"></i> Submit Permissions
+            </button>
+            <a href="/RoleMenu/Index" class="btn btn-secondary btn-sm float-right ml-2">
+                <i class="fas fa-arrow-left mr-1"></i> Back to Role Menu List
+            </a>
+            <a href="/Role/Index" class="btn btn-outline-secondary btn-sm float-right ml-2">
+                <i class="fas fa-user-shield mr-1"></i> Roles
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <!-- Role Selector Card -->
+    <div class="card card-secondary">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-user-tag mr-1"></i> Selected Role</h3>
+        </div>
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-4 form-group mb-0">
+                    <label>Role</label>
+                    <select id="ddlRoleSelector" class="form-control form-control-sm">
+                        <option value="@Model.RoleId" selected>@Model.RoleName</option>
+                    </select>
+                    <input type="hidden" id="CurrentRoleId" value="@Model.RoleId" />
+                </div>
+                <div class="col-md-5 mb-0">
+                    <label>Description</label>
+                    <p class="text-muted mb-0" id="roleDescText">@(string.IsNullOrEmpty(Model.Description) ? "No description provided." : Model.Description)</p>
+                </div>
+                <div class="col-md-3 mb-0 text-right">
+                    <label class="d-block">&nbsp;</label>
+                    <span id="selectedCountBadge" class="badge badge-primary px-3 py-2 font-size-14">
+                        <i class="fas fa-check-circle mr-1"></i> <span id="countNumber">0</span> Menus Selected
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Menus Table Card -->
+    <div class="card card-secondary">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="card-title"><i class="fas fa-sitemap mr-1"></i> System Menus & Access Permissions</h3>
+            <div class="card-tools ml-auto d-flex align-items-center">
+                <div class="input-group input-group-sm" style="width: 220px;">
+                    <input type="text" id="menuSearchInput" class="form-control" placeholder="Search menus...">
+                    <div class="input-group-append">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive" style="max-height: 65vh; overflow-y: auto;">
+                <table class="table table-hover table-striped table-bordered table-sm mb-0" id="tblRoleMenus">
+                    <thead class="bg-light sticky-top">
+                        <tr>
+                            <th style="width: 70px; text-align: center;">
+                                <div class="custom-control custom-checkbox">
+                                    <input type="checkbox" class="custom-control-input" id="chkSelectAll">
+                                    <label class="custom-control-label" for="chkSelectAll">All</label>
+                                </div>
+                            </th>
+                            <th style="width: 220px;">Parent Module</th>
+                            <th>Menu Hierarchy / Breadcrumb</th>
+                            <th style="width: 180px;">Target Controller</th>
+                            <th style="width: 180px;">URL</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tblRoleMenusBody">
+                        @if (Model != null && Model.RoleMenuList != null)
+                        {
+                            foreach (var item in Model.RoleMenuList)
+                            {
+                                var isParent = item.ParentId == 0;
+                                <tr class="menu-row @(isParent ? "table-active font-weight-bold" : "")" 
+                                    data-id="@item.MenuId" 
+                                    data-parent-id="@item.ParentId"
+                                    data-is-parent="@(isParent ? "true" : "false")">
+                                    <td style="text-align: center;">
+                                        <div class="custom-control custom-checkbox">
+                                            <input type="checkbox" 
+                                                   class="custom-control-input menu-checkbox @(isParent ? "parent-checkbox" : "child-checkbox")" 
+                                                   id="chk_@item.MenuId" 
+                                                   value="@item.MenuId"
+                                                   data-id="@item.MenuId"
+                                                   data-parent-id="@item.ParentId"
+                                                   @(item.IsChecked ? "checked" : "") />
+                                            <label class="custom-control-label" for="chk_@item.MenuId"></label>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if (isParent)
+                                        {
+                                            <span class="badge badge-dark"><i class="@(string.IsNullOrEmpty(item.IconClass) ? "fas fa-folder" : item.IconClass) mr-1"></i> Root Header</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-secondary"><i class="fas fa-folder-open mr-1"></i> @item.ParentMenuName</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (isParent)
+                                        {
+                                            <span class="text-primary"><i class="@(string.IsNullOrEmpty(item.IconClass) ? "fas fa-folder" : item.IconClass) mr-1"></i> @item.MenuName</span>
+                                        }
+                                        else
+                                        {
+                                            <span><i class="@(string.IsNullOrEmpty(item.IconClass) ? "far fa-circle" : item.IconClass) mr-1 text-muted"></i> @item.MenuName</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @(string.IsNullOrEmpty(item.Controller) ? "-" : item.Controller)
+                                    </td>
+                                    <td>
+                                        <code>@(string.IsNullOrEmpty(item.Url) ? "#" : item.Url)</code>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer bg-light d-flex justify-content-between align-items-center">
+            <span class="text-muted small">
+                <i class="fas fa-info-circle mr-1"></i> Selecting a child menu automatically includes its parent header in the authorized sidebar view.
+            </span>
+            <button type="button" class="button btnsave sslSave" id="btnSavePermissionsFooter">
+                <i class="fas fa-save mr-1"></i> Submit Permissions
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Load roles into dropdown
+            $.get('/Common/GetRoles', function (roles) {
+                if (roles && roles.length) {
+                    var $ddl = $('#ddlRoleSelector');
+                    var currentRoleId = $('#CurrentRoleId').val();
+                    $ddl.empty();
+                    $.each(roles, function (i, r) {
+                        var isSel = r.name == currentRoleId ? "selected" : "";
+                        $ddl.append(`<option value='${r.name}' ${isSel}>${r.value}</option>`);
+                    });
+                }
+            });
+
+            // Handle switching role in dropdown
+            $('#ddlRoleSelector').change(function () {
+                var selectedRoleId = $(this).val();
+                if (selectedRoleId) {
+                    window.location.href = '/RoleMenu/RoleMenuEdit?roleId=' + selectedRoleId;
+                }
+            });
+
+            // Update counter badge
+            function updateSelectedCount() {
+                var totalSelected = $('.menu-checkbox:checked').length;
+                $('#countNumber').text(totalSelected);
+            }
+            updateSelectedCount();
+
+            // "Select All" Header Checkbox
+            $('#chkSelectAll').change(function () {
+                var isChecked = $(this).is(':checked');
+                $('.menu-checkbox:visible').prop('checked', isChecked);
+                updateSelectedCount();
+            });
+
+            // Checkbox Hierarchy Handling
+            $('#tblRoleMenus').on('change', '.menu-checkbox', function () {
+                var $chk = $(this);
+                var isChecked = $chk.is(':checked');
+                var menuId = $chk.data('id');
+                var parentId = $chk.data('parent-id');
+
+                if (parentId === 0) {
+                    // It's a parent header: check/uncheck all its children
+                    $(`.child-checkbox[data-parent-id='${menuId}']`).prop('checked', isChecked);
+                } else {
+                    // It's a child: if checked, automatically check its parent header
+                    if (isChecked) {
+                        $(`.parent-checkbox[data-id='${parentId}']`).prop('checked', true);
+                    } else {
+                        // If all sibling children are unchecked, optionally uncheck parent
+                        var anySiblingChecked = $(`.child-checkbox[data-parent-id='${parentId}']:checked`).length > 0;
+                        if (!anySiblingChecked) {
+                            $(`.parent-checkbox[data-id='${parentId}']`).prop('checked', false);
+                        }
+                    }
+                }
+
+                updateSelectedCount();
+            });
+
+            // Quick Search / Filter in Table
+            $('#menuSearchInput').on('keyup', function () {
+                var term = $(this).val().toLowerCase();
+                $('#tblRoleMenusBody tr').each(function () {
+                    var rowText = $(this).text().toLowerCase();
+                    if (rowText.indexOf(term) > -1) {
+                        $(this).show();
+                    } else {
+                        $(this).hide();
+                    }
+                });
+            });
+
+            // Save Permissions (Header & Footer buttons)
+            $('#btnSavePermissions, #btnSavePermissionsFooter').click(function () {
+                var roleId = parseInt($('#CurrentRoleId').val(), 10);
+                if (!roleId || roleId <= 0) {
+                    toastr.error("Please select a valid Role.");
+                    return;
+                }
+
+                var selectedIds = [];
+                $('.menu-checkbox:checked').each(function () {
+                    selectedIds.push(parseInt($(this).val(), 10));
+                });
+
+                var payload = {
+                    RoleId: roleId,
+                    SelectedMenuIds: selectedIds
+                };
+
+                var $btn = $(this);
+                $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Saving...');
+
+                $.ajax({
+                    url: '/RoleMenu/SaveRoleMenu',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(payload),
+                    success: function (res) {
+                        $btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Submit Permissions');
+                        if (res.status === "Success" || res.status === 200 || res.status === "200") {
+                            toastr.success(res.message);
+                            // Clear sidebar sessionStorage cache so new permissions take effect immediately
+                            sessionStorage.removeItem("sidebarHtml");
+                        } else {
+                            toastr.error(res.message);
+                        }
+                    },
+                    error: function () {
+                        $btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Submit Permissions');
+                        toastr.error("An error occurred while saving permissions.");
+                    }
+                });
+            });
+        });
+    </script>
+}
+

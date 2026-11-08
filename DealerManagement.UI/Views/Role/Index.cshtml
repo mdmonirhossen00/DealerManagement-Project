@@ -1,0 +1,158 @@
+@{
+    ViewData["Title"] = "Role Management";
+}
+
+@Html.Partial("_Header", new DealerManagement.Model.Common.HeaderModel()
+{
+    HeaderName = "Role Management",
+    BreadCrums = new Dictionary<string, string>()
+    {
+        {"/Role", "Role"},
+        {"", "List"}
+    }
+})
+
+<link href="~/css/button.css" rel="stylesheet" />
+
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header p-2">
+            <a href="/Role/Create" class="button NewButton addNewButton">
+                <i class="fas fa-plus mr-1"></i> New Role
+            </a>
+            <a href="/RoleMenu/Index" class="btn btn-outline-primary btn-sm ml-2">
+                <i class="fas fa-shield-alt mr-1"></i> Role Menu Permissions
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <div class="card card-secondary">
+        <div class="card-header">
+            <h3 class="card-title">List Of User Roles</h3>
+        </div>
+        <div class="card-body">
+            <div id="RoleGrid"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            var gridDataSource = new kendo.data.DataSource({
+                type: "json",
+                serverPaging: true,
+                serverSorting: true,
+                serverFiltering: true,
+                pageSize: 10,
+                transport: {
+                    read: {
+                        url: "/Role/GetGridData",
+                        type: "POST",
+                        dataType: "json"
+                    }
+                },
+                schema: {
+                    data: "items",
+                    total: "totalCount",
+                    model: {
+                        id: "id",
+                        fields: {
+                            id: { type: "number" },
+                            name: { type: "string" },
+                            description: { type: "string" },
+                            assignedMenuCount: { type: "number" },
+                            isActive: { type: "boolean" },
+                            createdAt: { type: "date" }
+                        }
+                    }
+                }
+            });
+
+            $("#RoleGrid").kendoGrid({
+                dataSource: gridDataSource,
+                pageable: {
+                    refresh: true,
+                    pageSizes: [10, 20, 50, "all"],
+                    buttonCount: 5
+                },
+                sortable: true,
+                filterable: true,
+                columns: [
+                    {
+                        title: "Action",
+                        width: "160px",
+                        headerAttributes: { style: "text-align: center;" },
+                        attributes: { style: "text-align: center;" },
+                        template: function (dataItem) {
+                            var editBtn = `<a href='/Role/Edit/${dataItem.id}' class='btn btn-primary btn-sm mr-1' title='Edit Role'>
+                                            <i class='fas fa-pencil-alt'></i>
+                                           </a>`;
+                            var menuBtn = `<a href='/RoleMenu/RoleMenuEdit?roleId=${dataItem.id}' class='btn btn-info btn-sm mr-1' title='Assign Menus'>
+                                            <i class='fas fa-shield-alt'></i>
+                                           </a>`;
+                            var delBtn = dataItem.name.toLowerCase() === 'admin'
+                                ? `<button class='btn btn-secondary btn-sm' disabled title='Admin role cannot be deleted'><i class='fas fa-lock'></i></button>`
+                                : `<button type='button' class='btn btn-danger btn-sm' onclick='deleteRole(${dataItem.id})' title='Delete Role'>
+                                    <i class='fas fa-trash'></i>
+                                   </button>`;
+                            return editBtn + menuBtn + delBtn;
+                        }
+                    },
+                    { field: "name", title: "Role Name", width: "200px" },
+                    { field: "description", title: "Description" },
+                    {
+                        field: "assignedMenuCount",
+                        title: "Permitted Menus",
+                        width: "140px",
+                        attributes: { style: "text-align: center;" },
+                        template: function (dataItem) {
+                            return `<span class='badge badge-primary px-2 py-1'><i class='fas fa-list-check mr-1'></i> ${dataItem.assignedMenuCount} Menus</span>`;
+                        }
+                    },
+                    {
+                        field: "isActive",
+                        title: "Status",
+                        width: "110px",
+                        attributes: { style: "text-align: center;" },
+                        template: function (dataItem) {
+                            return dataItem.isActive 
+                                ? "<span class='badge badge-success px-2 py-1'><i class='fas fa-check mr-1'></i> Active</span>" 
+                                : "<span class='badge badge-danger px-2 py-1'><i class='fas fa-times mr-1'></i> Inactive</span>";
+                        }
+                    },
+                    {
+                        field: "createdAt",
+                        title: "Created On",
+                        width: "130px",
+                        template: "#= kendo.toString(kendo.parseDate(createdAt), 'yyyy-MM-dd') #"
+                    }
+                ]
+            });
+        });
+
+        function deleteRole(id) {
+            if (confirm("Are you sure you want to delete this Role? All associated permissions will also be removed.")) {
+                $.ajax({
+                    url: '/Role/Delete',
+                    type: 'POST',
+                    data: { id: id },
+                    success: function (res) {
+                        if (res.status === "Success" || res.status === 200 || res.status === "200") {
+                            toastr.success(res.message);
+                            $("#RoleGrid").data("kendoGrid").dataSource.read();
+                        } else {
+                            toastr.error(res.message);
+                        }
+                    },
+                    error: function () {
+                        toastr.error("An error occurred while deleting the Role.");
+                    }
+                });
+            }
+        }
+    </script>
+}
+
