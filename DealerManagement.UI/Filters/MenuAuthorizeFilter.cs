@@ -59,7 +59,11 @@ namespace DealerManagement.UI.Filters
             }
 
             // 4. Admin role bypasses all menu restrictions
-            if (user.IsInRole("Admin"))
+            bool isAdmin = user.IsInRole("Admin") ||
+                           string.Equals(user.Identity?.Name, "admin", StringComparison.OrdinalIgnoreCase) ||
+                           user.Claims.Any(c => c.Type == ClaimTypes.Role && string.Equals(c.Value, "Admin", StringComparison.OrdinalIgnoreCase));
+
+            if (isAdmin)
             {
                 await next();
                 return;

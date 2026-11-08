@@ -199,22 +199,18 @@ namespace DealerManagement.Repository.Repositories
                     return new List<Menu>();
                 }
 
-                // Get authorized menus for user via UserMenu OR RoleMenu (following ShampanERP)
+                // Get authorized menus for user via RoleMenu
                 const string authMenusSql = @"
                     SELECT 
                         m.Id, m.Name, m.Controller, m.Action, m.Url, m.IconClass,
                         m.ParentId, m.SubParentId, m.SubChildId, m.DisplayOrder, m.Module, m.IsActive, m.CreatedAt,
                         (SELECT COUNT(1) FROM dbo.Menu c 
                          WHERE c.ParentId = m.Id AND c.IsActive = 1 
-                           AND (EXISTS (SELECT 1 FROM dbo.UserMenu cum WHERE cum.MenuId = c.Id AND cum.UserId = @UserId)
-                                OR EXISTS (SELECT 1 FROM dbo.RoleMenu crm WHERE crm.MenuId = c.Id AND crm.RoleId = @RoleId))) AS TotalChild,
+                           AND EXISTS (SELECT 1 FROM dbo.RoleMenu crm WHERE crm.MenuId = c.Id AND crm.RoleId = @RoleId)) AS TotalChild,
                         0 AS TotalSubChild
                     FROM dbo.Menu m
                     WHERE m.IsActive = 1 
-                      AND (
-                          EXISTS (SELECT 1 FROM dbo.UserMenu um WHERE um.MenuId = m.Id AND um.UserId = @UserId)
-                          OR EXISTS (SELECT 1 FROM dbo.RoleMenu rm WHERE rm.MenuId = m.Id AND rm.RoleId = @RoleId)
-                      )
+                      AND EXISTS (SELECT 1 FROM dbo.RoleMenu rm WHERE rm.MenuId = m.Id AND rm.RoleId = @RoleId)
                     ORDER BY 
                         CASE WHEN m.ParentId = 0 THEN m.Id ELSE m.ParentId END ASC,
                         CASE WHEN m.ParentId = 0 THEN 0 ELSE 1 END ASC,
@@ -304,14 +300,17 @@ namespace DealerManagement.Repository.Repositories
                     await insCmd.ExecuteNonQueryAsync();
                 }
 
-                // 4. Synchronize dbo.UserMenu for all users having this Role (following ShampanERP)
+                // 4. Synchronize dbo.UserMenu for all users having this Role if table exists
                 const string syncUserMenuSql = @"
-                    DELETE FROM dbo.UserMenu WHERE RoleId = @RoleId;
-                    INSERT INTO dbo.UserMenu (UserId, RoleId, MenuId, List, [Insert], [Delete], Post, CreatedAt, CreatedBy)
-                    SELECT u.UserID, @RoleId, rm.MenuId, 1, 1, 1, 1, GETDATE(), @CreatedBy
-                    FROM dbo.Users u
-                    CROSS JOIN dbo.RoleMenu rm
-                    WHERE u.RoleID = @RoleId AND rm.RoleId = @RoleId AND u.IsActive = 1;";
+                    IF OBJECT_ID('dbo.UserMenu', 'U') IS NOT NULL
+                    BEGIN
+                        DELETE FROM dbo.UserMenu WHERE RoleId = @RoleId;
+                        INSERT INTO dbo.UserMenu (UserId, RoleId, MenuId, List, [Insert], [Delete], Post, CreatedAt, CreatedBy)
+                        SELECT u.UserID, @RoleId, rm.MenuId, 1, 1, 1, 1, GETDATE(), @CreatedBy
+                        FROM dbo.Users u
+                        CROSS JOIN dbo.RoleMenu rm
+                        WHERE u.RoleID = @RoleId AND rm.RoleId = @RoleId AND u.IsActive = 1;
+                    END";
 
                 using (var syncCmd = conn.CreateCommand())
                 {
@@ -352,11 +351,18 @@ namespace DealerManagement.Repository.Repositories
 
             // Check if user is active and whether they have Admin role
             const string checkUserSql = @"
-                SELECT TOP 1 u.RoleID, r.Name AS RoleName, u.IsActive
+                SELECT TOP 1 
+                    u.UserName,
+                    ISNULL(u.RoleID, ur.RoleID) AS RoleID, 
+                    ISNULL(r.Name, r2.Name) AS RoleName, 
+                    u.IsActive
                 FROM dbo.Users u
                 LEFT JOIN dbo.Role r ON u.RoleID = r.Id
+                LEFT JOIN dbo.UserRole ur ON u.UserID = ur.UserID
+                LEFT JOIN dbo.Role r2 ON ur.RoleID = r2.Id
                 WHERE u.UserID = @UserID";
 
+            int? roleId = null;
             using (var userCmd = CreateCommand(checkUserSql, conn))
             {
                 userCmd.Parameters.Add("@UserID", SqlDbType.Int).Value = userId;
@@ -366,8 +372,15 @@ namespace DealerManagement.Repository.Repositories
                     bool isActive = reader.GetBoolean(reader.GetOrdinal("IsActive"));
                     if (!isActive) return false;
 
+                    string? userName = reader.IsDBNull(reader.GetOrdinal("UserName")) ? null : reader.GetString(reader.GetOrdinal("UserName"));
                     string? roleName = reader.IsDBNull(reader.GetOrdinal("RoleName")) ? null : reader.GetString(reader.GetOrdinal("RoleName"));
-                    if (string.Equals(roleName, "Admin", StringComparison.OrdinalIgnoreCase))
+                    if (!reader.IsDBNull(reader.GetOrdinal("RoleID")))
+                    {
+                        roleId = reader.GetInt32(reader.GetOrdinal("RoleID"));
+                    }
+
+                    if (string.Equals(roleName, "Admin", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(userName, "admin", StringComparison.OrdinalIgnoreCase))
                     {
                         return true;
                     }
@@ -378,24 +391,25 @@ namespace DealerManagement.Repository.Repositories
                 }
             }
 
-            // Check if user has permission to this controller via UserMenu OR RoleMenu
+            if (!roleId.HasValue)
+            {
+                return false;
+            }
+
+            // Check if user has permission to this controller via RoleMenu
             const string authCheckSql = @"
                 SELECT COUNT(1)
                 FROM dbo.Menu m
                 WHERE m.IsActive = 1 
                   AND m.Controller = @Controller
-                  AND (
-                      EXISTS (SELECT 1 FROM dbo.UserMenu um WHERE um.MenuId = m.Id AND um.UserId = @UserID)
-                      OR EXISTS (
-                          SELECT 1 FROM dbo.RoleMenu rm 
-                          INNER JOIN dbo.Users u ON u.RoleID = rm.RoleId
-                          WHERE rm.MenuId = m.Id AND u.UserID = @UserID
-                      )
+                  AND EXISTS (
+                      SELECT 1 FROM dbo.RoleMenu rm 
+                      WHERE rm.MenuId = m.Id AND rm.RoleId = @RoleId
                   )";
 
             using (var authCmd = CreateCommand(authCheckSql, conn))
             {
-                authCmd.Parameters.Add("@UserID", SqlDbType.Int).Value = userId;
+                authCmd.Parameters.Add("@RoleId", SqlDbType.Int).Value = roleId.Value;
                 authCmd.Parameters.Add("@Controller", SqlDbType.NVarChar, 100).Value = controller.Trim();
 
                 int count = Convert.ToInt32(await authCmd.ExecuteScalarAsync() ?? 0);

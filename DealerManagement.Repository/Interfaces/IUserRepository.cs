@@ -17,6 +17,7 @@ namespace DealerManagement.Repository.Interfaces
         Task<int> UpdatePasswordAsync(int userId, string passwordHash, string updatedBy);
         Task<bool> IsUserNameExistsAsync(string userName, int excludeUserId = 0);
         Task<bool> AssignRoleToUserAsync(int userId, int roleId, string? updatedBy);
+        Task<int> GetActiveAdminCountAsync();
     }
 }
 

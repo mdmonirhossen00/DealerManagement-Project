@@ -22,9 +22,13 @@ namespace DealerManagement.Repository.Repositories
             const string sql = @"
                 SELECT TOP 1 
                     u.UserID, u.UserName, u.FullName, u.Email, u.PhoneNumber, u.PasswordHash, u.IsActive, 
-                    u.RoleID, r.Name AS RoleName, u.CreatedAt, u.CreatedBy, u.UpdatedAt, u.UpdatedBy
+                    ISNULL(u.RoleID, ur.RoleID) AS RoleID, 
+                    ISNULL(r.Name, r2.Name) AS RoleName, 
+                    u.CreatedAt, u.CreatedBy, u.UpdatedAt, u.UpdatedBy
                 FROM dbo.Users u
                 LEFT JOIN dbo.Role r ON u.RoleID = r.Id
+                LEFT JOIN dbo.UserRole ur ON u.UserID = ur.UserID
+                LEFT JOIN dbo.Role r2 ON ur.RoleID = r2.Id
                 WHERE u.UserName = @UserName";
 
             using var conn = GetConnection();
@@ -45,9 +49,13 @@ namespace DealerManagement.Repository.Repositories
             const string sql = @"
                 SELECT TOP 1 
                     u.UserID, u.UserName, u.FullName, u.Email, u.PhoneNumber, u.PasswordHash, u.IsActive, 
-                    u.RoleID, r.Name AS RoleName, u.CreatedAt, u.CreatedBy, u.UpdatedAt, u.UpdatedBy
+                    ISNULL(u.RoleID, ur.RoleID) AS RoleID, 
+                    ISNULL(r.Name, r2.Name) AS RoleName, 
+                    u.CreatedAt, u.CreatedBy, u.UpdatedAt, u.UpdatedBy
                 FROM dbo.Users u
                 LEFT JOIN dbo.Role r ON u.RoleID = r.Id
+                LEFT JOIN dbo.UserRole ur ON u.UserID = ur.UserID
+                LEFT JOIN dbo.Role r2 ON ur.RoleID = r2.Id
                 WHERE u.UserID = @UserID";
 
             using var conn = GetConnection();
@@ -68,9 +76,13 @@ namespace DealerManagement.Repository.Repositories
             const string sql = @"
                 SELECT 
                     u.UserID, u.UserName, u.FullName, u.Email, u.PhoneNumber, u.PasswordHash, u.IsActive, 
-                    u.RoleID, r.Name AS RoleName, u.CreatedAt, u.CreatedBy, u.UpdatedAt, u.UpdatedBy
+                    ISNULL(u.RoleID, ur.RoleID) AS RoleID, 
+                    ISNULL(r.Name, r2.Name) AS RoleName, 
+                    u.CreatedAt, u.CreatedBy, u.UpdatedAt, u.UpdatedBy
                 FROM dbo.Users u
                 LEFT JOIN dbo.Role r ON u.RoleID = r.Id
+                LEFT JOIN dbo.UserRole ur ON u.UserID = ur.UserID
+                LEFT JOIN dbo.Role r2 ON ur.RoleID = r2.Id
                 ORDER BY u.UserID DESC";
 
             var list = new List<User>();
@@ -162,11 +174,14 @@ namespace DealerManagement.Repository.Repositories
                         INSERT INTO dbo.UserRole (UserID, RoleID, CreatedAt, CreatedBy)
                         VALUES (@UserID, @RoleID, GETDATE(), @CreatedBy)
                     END;
-                    DELETE FROM dbo.UserMenu WHERE UserId = @UserID;
-                    INSERT INTO dbo.UserMenu (UserId, RoleId, MenuId, List, [Insert], [Delete], Post, CreatedAt, CreatedBy)
-                    SELECT @UserID, @RoleID, rm.MenuId, 1, 1, 1, 1, GETDATE(), @CreatedBy
-                    FROM dbo.RoleMenu rm
-                    WHERE rm.RoleId = @RoleID;";
+                    IF OBJECT_ID('dbo.UserMenu', 'U') IS NOT NULL
+                    BEGIN
+                        DELETE FROM dbo.UserMenu WHERE UserId = @UserID;
+                        INSERT INTO dbo.UserMenu (UserId, RoleId, MenuId, List, [Insert], [Delete], Post, CreatedAt, CreatedBy)
+                        SELECT @UserID, @RoleID, rm.MenuId, 1, 1, 1, 1, GETDATE(), @CreatedBy
+                        FROM dbo.RoleMenu rm
+                        WHERE rm.RoleId = @RoleID;
+                    END";
                 using var urCmd = CreateCommand(userRoleSql, conn);
                 urCmd.Parameters.Add("@UserID", SqlDbType.Int).Value = userId;
                 urCmd.Parameters.Add("@RoleID", SqlDbType.Int).Value = user.RoleID.Value;
@@ -210,11 +225,14 @@ namespace DealerManagement.Repository.Repositories
                     DELETE FROM dbo.UserRole WHERE UserID = @UserID;
                     INSERT INTO dbo.UserRole (UserID, RoleID, CreatedAt, CreatedBy)
                     VALUES (@UserID, @RoleID, GETDATE(), @UpdatedBy);
-                    DELETE FROM dbo.UserMenu WHERE UserId = @UserID;
-                    INSERT INTO dbo.UserMenu (UserId, RoleId, MenuId, List, [Insert], [Delete], Post, CreatedAt, CreatedBy)
-                    SELECT @UserID, @RoleID, rm.MenuId, 1, 1, 1, 1, GETDATE(), @UpdatedBy
-                    FROM dbo.RoleMenu rm
-                    WHERE rm.RoleId = @RoleID;";
+                    IF OBJECT_ID('dbo.UserMenu', 'U') IS NOT NULL
+                    BEGIN
+                        DELETE FROM dbo.UserMenu WHERE UserId = @UserID;
+                        INSERT INTO dbo.UserMenu (UserId, RoleId, MenuId, List, [Insert], [Delete], Post, CreatedAt, CreatedBy)
+                        SELECT @UserID, @RoleID, rm.MenuId, 1, 1, 1, 1, GETDATE(), @UpdatedBy
+                        FROM dbo.RoleMenu rm
+                        WHERE rm.RoleId = @RoleID;
+                    END";
                 using var syncCmd = CreateCommand(syncSql, conn);
                 syncCmd.Parameters.Add("@UserID", SqlDbType.Int).Value = user.UserID;
                 syncCmd.Parameters.Add("@RoleID", SqlDbType.Int).Value = user.RoleID.Value;
@@ -314,6 +332,23 @@ namespace DealerManagement.Repository.Repositories
                 await transaction.RollbackAsync();
                 throw;
             }
+        }
+
+        public async Task<int> GetActiveAdminCountAsync()
+        {
+            const string sql = @"
+                SELECT COUNT(DISTINCT u.UserID)
+                FROM dbo.Users u
+                LEFT JOIN dbo.Role r ON u.RoleID = r.Id
+                LEFT JOIN dbo.UserRole ur ON u.UserID = ur.UserID
+                LEFT JOIN dbo.Role r2 ON ur.RoleID = r2.Id
+                WHERE u.IsActive = 1 
+                  AND (r.Name = 'Admin' OR r2.Name = 'Admin' OR u.UserName = 'admin')";
+
+            using var conn = GetConnection();
+            using var cmd = CreateCommand(sql, conn);
+            await conn.OpenAsync();
+            return Convert.ToInt32(await cmd.ExecuteScalarAsync() ?? 0);
         }
 
         private static User MapUser(SqlDataReader reader)
