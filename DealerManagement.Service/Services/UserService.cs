@@ -186,6 +186,21 @@ namespace DealerManagement.Service.Services
                     };
                 }
 
+                // Prevent deactivating or removing Admin role from the last active Admin
+                bool wasActiveAdmin = existing.IsActive && string.Equals(existing.RoleName, "Admin", StringComparison.OrdinalIgnoreCase);
+                if (wasActiveAdmin && (!model.IsActive || model.RoleID != existing.RoleID))
+                {
+                    int activeAdminCount = await _userRepository.GetActiveAdminCountAsync();
+                    if (activeAdminCount <= 1)
+                    {
+                        return new ResultModel<UserVM>
+                        {
+                            Status = Status.Fail,
+                            Message = "Cannot deactivate or change the role of the last active Admin user."
+                        };
+                    }
+                }
+
                 existing.FullName = model.FullName.Trim();
                 existing.Email = model.Email?.Trim();
                 existing.PhoneNumber = model.PhoneNumber?.Trim();
@@ -226,6 +241,22 @@ namespace DealerManagement.Service.Services
                         Message = "User not found.",
                         Data = false
                     };
+                }
+
+                // Prevent deactivating the last active Admin
+                bool wasActiveAdmin = user.IsActive && string.Equals(user.RoleName, "Admin", StringComparison.OrdinalIgnoreCase);
+                if (wasActiveAdmin)
+                {
+                    int activeAdminCount = await _userRepository.GetActiveAdminCountAsync();
+                    if (activeAdminCount <= 1)
+                    {
+                        return new ResultModel<bool>
+                        {
+                            Status = Status.Fail,
+                            Message = "Cannot deactivate the last active Admin user.",
+                            Data = false
+                        };
+                    }
                 }
 
                 bool newStatus = !user.IsActive;

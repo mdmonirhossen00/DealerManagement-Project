@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -12,6 +14,16 @@ namespace DealerManagement.UI.Filters
 {
     public class MenuAuthorizeFilter : IAsyncActionFilter
     {
+        private static readonly HashSet<string> SystemControllers = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "Home", "Login", "Common"
+        };
+
+        private static readonly HashSet<string> AdminOnlyControllers = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "User", "Role", "RoleMenu"
+        };
+
         private readonly IRoleMenuService _roleMenuService;
 
         public MenuAuthorizeFilter(IRoleMenuService roleMenuService)
@@ -21,7 +33,6 @@ namespace DealerManagement.UI.Filters
 
         public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
-            // 1. Check if action or controller allows anonymous access
             var actionDescriptor = context.ActionDescriptor as ControllerActionDescriptor;
             if (actionDescriptor == null)
             {
@@ -29,8 +40,9 @@ namespace DealerManagement.UI.Filters
                 return;
             }
 
+            // 1. Check if action or controller allows anonymous access
             bool hasAllowAnonymous = actionDescriptor.EndpointMetadata != null &&
-                context.ActionDescriptor.EndpointMetadata.Any(em => em is AllowAnonymousAttribute);
+                actionDescriptor.EndpointMetadata.Any(em => em is AllowAnonymousAttribute);
 
             if (hasAllowAnonymous)
             {
@@ -46,30 +58,39 @@ namespace DealerManagement.UI.Filters
                 return;
             }
 
-            // 3. System controllers accessible to all authenticated users
             string controllerName = actionDescriptor.ControllerName;
             string actionName = actionDescriptor.ActionName;
 
-            if (string.Equals(controllerName, "Home", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(controllerName, "Login", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(controllerName, "Common", StringComparison.OrdinalIgnoreCase))
+            // 3. System controllers are accessible to all authenticated users
+            if (SystemControllers.Contains(controllerName))
             {
                 await next();
                 return;
             }
 
-            // 4. Admin role bypasses all menu restrictions
-            bool isAdmin = user.IsInRole("Admin") ||
-                           string.Equals(user.Identity?.Name, "admin", StringComparison.OrdinalIgnoreCase) ||
-                           user.Claims.Any(c => c.Type == ClaimTypes.Role && string.Equals(c.Value, "Admin", StringComparison.OrdinalIgnoreCase));
+            bool isAdmin = user.IsInRole("Admin");
 
+            // 4. Admin-only controllers (User, Role, RoleMenu): strictly enforce Admin role
+            if (AdminOnlyControllers.Contains(controllerName))
+            {
+                if (isAdmin)
+                {
+                    await next();
+                    return;
+                }
+
+                DenyAccess(context);
+                return;
+            }
+
+            // 5. Admin role bypasses all business menu restrictions
             if (isAdmin)
             {
                 await next();
                 return;
             }
 
-            // 5. Retrieve logged-in user id
+            // 6. Non-Admin users: retrieve logged-in user id
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
             {
@@ -77,33 +98,36 @@ namespace DealerManagement.UI.Filters
                 return;
             }
 
-            // 6. Check role-based menu authorization
+            // 7. Check menu authorization explicitly granted by Admin
             bool isAuthorized = await _roleMenuService.IsUserAuthorizedAsync(userId, controllerName, actionName);
-
             if (!isAuthorized)
             {
-                bool isAjax = context.HttpContext.Request.Headers["X-Requested-With"] == "XMLHttpRequest" ||
-                              (context.HttpContext.Request.Headers.Accept.ToString().Contains("application/json", StringComparison.OrdinalIgnoreCase)) ||
-                              (context.HttpContext.Request.ContentType?.Contains("application/json", StringComparison.OrdinalIgnoreCase) ?? false);
-
-                if (isAjax)
-                {
-                    context.HttpContext.Response.StatusCode = 403;
-                    context.Result = new JsonResult(new ResultModel<object>
-                    {
-                        Status = Status.Fail,
-                        Message = "Access Denied: You do not have permission to access this resource."
-                    });
-                }
-                else
-                {
-                    context.Result = new RedirectToActionResult("AccessDenied", "Home", null);
-                }
+                DenyAccess(context);
                 return;
             }
 
             await next();
         }
+
+        private static void DenyAccess(ActionExecutingContext context)
+        {
+            bool isAjax = context.HttpContext.Request.Headers["X-Requested-With"] == "XMLHttpRequest" ||
+                          context.HttpContext.Request.Headers.Accept.ToString().Contains("application/json", StringComparison.OrdinalIgnoreCase) ||
+                          (context.HttpContext.Request.ContentType?.Contains("application/json", StringComparison.OrdinalIgnoreCase) ?? false);
+
+            if (isAjax)
+            {
+                context.HttpContext.Response.StatusCode = 403;
+                context.Result = new JsonResult(new ResultModel<object>
+                {
+                    Status = Status.Fail,
+                    Message = "Access Denied: You do not have permission to access this resource."
+                });
+            }
+            else
+            {
+                context.Result = new RedirectToActionResult("AccessDenied", "Home", null);
+            }
+        }
     }
 }
-

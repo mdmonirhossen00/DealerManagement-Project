@@ -36,11 +36,6 @@ namespace DealerManagement.UI.Controllers
                 var result = await _menuService.GetAuthorizedMenusForUserAsync(userId);
                 menus = result.Data ?? new List<Menu>();
             }
-            else
-            {
-                var result = await _menuService.GetActiveMenusAsync();
-                menus = result.Data ?? new List<Menu>();
-            }
 
             ViewBag.ShouldRenderMenu = menus.Count > 0;
             return PartialView("_leftSideBar", menus);

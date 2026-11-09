@@ -10,7 +10,7 @@ using DealerManagement.Service.Interfaces;
 
 namespace DealerManagement.UI.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     public class UserController : Controller
     {
         private readonly IUserService _userService;

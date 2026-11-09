@@ -9,7 +9,7 @@ using DealerManagement.Service.Interfaces;
 
 namespace DealerManagement.UI.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     public class RoleController : Controller
     {
         private readonly IRoleService _roleService;

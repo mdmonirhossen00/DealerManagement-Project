@@ -141,6 +141,17 @@ namespace DealerManagement.Service.Services
                     };
                 }
 
+                // Prevent renaming the Admin role
+                var existing = await _roleRepository.GetByIdAsync(role.Id);
+                if (existing != null && string.Equals(existing.Name, "Admin", StringComparison.OrdinalIgnoreCase) && !string.Equals(role.Name, "Admin", StringComparison.OrdinalIgnoreCase))
+                {
+                    return new ResultModel<Role>
+                    {
+                        Status = Status.Fail,
+                        Message = "The Admin role name cannot be modified."
+                    };
+                }
+
                 role.UpdatedBy = updatedBy;
                 bool updated = await _roleRepository.UpdateAsync(role);
 

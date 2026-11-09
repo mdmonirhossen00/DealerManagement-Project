@@ -165,7 +165,7 @@ namespace DealerManagement.Repository.Repositories
             var newId = await cmd.ExecuteScalarAsync();
             int userId = Convert.ToInt32(newId);
 
-            // Sync UserRole and UserMenu tables if role is specified
+            // Sync UserRole table if role is specified
             if (user.RoleID.HasValue)
             {
                 const string userRoleSql = @"
@@ -173,15 +173,7 @@ namespace DealerManagement.Repository.Repositories
                     BEGIN
                         INSERT INTO dbo.UserRole (UserID, RoleID, CreatedAt, CreatedBy)
                         VALUES (@UserID, @RoleID, GETDATE(), @CreatedBy)
-                    END;
-                    IF OBJECT_ID('dbo.UserMenu', 'U') IS NOT NULL
-                    BEGIN
-                        DELETE FROM dbo.UserMenu WHERE UserId = @UserID;
-                        INSERT INTO dbo.UserMenu (UserId, RoleId, MenuId, List, [Insert], [Delete], Post, CreatedAt, CreatedBy)
-                        SELECT @UserID, @RoleID, rm.MenuId, 1, 1, 1, 1, GETDATE(), @CreatedBy
-                        FROM dbo.RoleMenu rm
-                        WHERE rm.RoleId = @RoleID;
-                    END";
+                    END;";
                 using var urCmd = CreateCommand(userRoleSql, conn);
                 urCmd.Parameters.Add("@UserID", SqlDbType.Int).Value = userId;
                 urCmd.Parameters.Add("@RoleID", SqlDbType.Int).Value = user.RoleID.Value;
@@ -218,21 +210,13 @@ namespace DealerManagement.Repository.Repositories
             await conn.OpenAsync();
             int rows = await cmd.ExecuteNonQueryAsync();
 
-            // Sync UserRole and UserMenu tables
+            // Sync UserRole table
             if (user.RoleID.HasValue)
             {
                 const string syncSql = @"
                     DELETE FROM dbo.UserRole WHERE UserID = @UserID;
                     INSERT INTO dbo.UserRole (UserID, RoleID, CreatedAt, CreatedBy)
-                    VALUES (@UserID, @RoleID, GETDATE(), @UpdatedBy);
-                    IF OBJECT_ID('dbo.UserMenu', 'U') IS NOT NULL
-                    BEGIN
-                        DELETE FROM dbo.UserMenu WHERE UserId = @UserID;
-                        INSERT INTO dbo.UserMenu (UserId, RoleId, MenuId, List, [Insert], [Delete], Post, CreatedAt, CreatedBy)
-                        SELECT @UserID, @RoleID, rm.MenuId, 1, 1, 1, 1, GETDATE(), @UpdatedBy
-                        FROM dbo.RoleMenu rm
-                        WHERE rm.RoleId = @RoleID;
-                    END";
+                    VALUES (@UserID, @RoleID, GETDATE(), @UpdatedBy);";
                 using var syncCmd = CreateCommand(syncSql, conn);
                 syncCmd.Parameters.Add("@UserID", SqlDbType.Int).Value = user.UserID;
                 syncCmd.Parameters.Add("@RoleID", SqlDbType.Int).Value = user.RoleID.Value;
@@ -343,7 +327,7 @@ namespace DealerManagement.Repository.Repositories
                 LEFT JOIN dbo.UserRole ur ON u.UserID = ur.UserID
                 LEFT JOIN dbo.Role r2 ON ur.RoleID = r2.Id
                 WHERE u.IsActive = 1 
-                  AND (r.Name = 'Admin' OR r2.Name = 'Admin' OR u.UserName = 'admin')";
+                  AND (r.Name = 'Admin' OR r2.Name = 'Admin')";
 
             using var conn = GetConnection();
             using var cmd = CreateCommand(sql, conn);

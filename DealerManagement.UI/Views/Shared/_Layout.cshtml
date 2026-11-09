@@ -72,9 +72,12 @@
                 <li class="nav-item d-none d-sm-inline-block">
                     <a href="/Home/Index" class="nav-link">Home</a>
                 </li>
-                <li class="nav-item d-none d-sm-inline-block">
-                    <a href="/User/Index" class="nav-link">Users</a>
-                </li>
+                @if (User.IsInRole("Admin"))
+                {
+                    <li class="nav-item d-none d-sm-inline-block">
+                        <a href="/User/Index" class="nav-link">Users</a>
+                    </li>
+                }
             </ul>
 
             <ul class="navbar-nav ml-auto align-items-center">
@@ -145,11 +148,14 @@
                 $.LoadingOverlay("hide");
             });
           
-            // Load Dynamic Sidebar Menu
+            // Load Dynamic Sidebar Menu (scoped to authenticated user)
+            let currentUserId = '@User.FindFirst(ClaimTypes.NameIdentifier)?.Value';
+            let cachedUserId = sessionStorage.getItem("sidebarUserId");
             let cachedSidebar = sessionStorage.getItem("sidebarHtml");
-            // Invalidate cache if old 3-item menu was cached
-            if (cachedSidebar && cachedSidebar.indexOf('Product Category') === -1) {
+
+            if (cachedUserId !== currentUserId) {
                 sessionStorage.removeItem("sidebarHtml");
+                sessionStorage.setItem("sidebarUserId", currentUserId);
                 cachedSidebar = null;
             }
 

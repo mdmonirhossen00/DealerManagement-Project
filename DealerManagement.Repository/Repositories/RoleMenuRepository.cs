@@ -20,7 +20,20 @@ namespace DealerManagement.Repository.Repositories
 
         public async Task<List<RoleMenuItemVM>> GetRoleMenuAccessDataAsync(int roleId)
         {
-            const string sql = @"
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+
+            string? roleName = null;
+            const string checkRoleSql = "SELECT Name FROM dbo.Role WHERE Id = @RoleId";
+            using (var rCmd = CreateCommand(checkRoleSql, conn))
+            {
+                rCmd.Parameters.Add("@RoleId", SqlDbType.Int).Value = roleId;
+                roleName = (string?)await rCmd.ExecuteScalarAsync();
+            }
+
+            bool isAdminRole = string.Equals(roleName, "Admin", StringComparison.OrdinalIgnoreCase);
+
+            string sql = @"
                 WITH MenuHierarchy AS (
                     SELECT 
                         Id, 
@@ -54,34 +67,42 @@ namespace DealerManagement.Repository.Repositories
                 INNER JOIN MenuHierarchy mh ON m.Id = mh.Id
                 LEFT JOIN dbo.Menu pm ON m.ParentId = pm.Id
                 LEFT JOIN dbo.RoleMenu rm ON rm.MenuId = m.Id AND rm.RoleId = @RoleId
-                WHERE m.IsActive = 1
+                WHERE m.IsActive = 1";
+
+            if (!isAdminRole)
+            {
+                sql += @" AND ISNULL(m.Module, '') <> 'Admin' 
+                          AND (m.Controller IS NULL OR m.Controller NOT IN ('User', 'Role', 'RoleMenu'))
+                          AND m.Name <> 'Administration'";
+            }
+
+            sql += @"
                 ORDER BY 
                     CASE WHEN m.ParentId = 0 THEN m.Id ELSE m.ParentId END ASC,
                     CASE WHEN m.ParentId = 0 THEN 0 ELSE 1 END ASC,
                     m.DisplayOrder ASC";
 
             var list = new List<RoleMenuItemVM>();
-            using var conn = GetConnection();
-            using var cmd = CreateCommand(sql, conn);
-            cmd.Parameters.Add("@RoleId", SqlDbType.Int).Value = roleId;
-
-            await conn.OpenAsync();
-            using var reader = await cmd.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
+            using (var cmd = CreateCommand(sql, conn))
             {
-                list.Add(new RoleMenuItemVM
+                cmd.Parameters.Add("@RoleId", SqlDbType.Int).Value = roleId;
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
                 {
-                    MenuId = reader.GetInt32(reader.GetOrdinal("MenuId")),
-                    MenuName = reader.GetString(reader.GetOrdinal("MenuName")),
-                    ParentId = reader.GetInt32(reader.GetOrdinal("ParentId")),
-                    ParentMenuName = reader.IsDBNull(reader.GetOrdinal("ParentMenuName")) ? null : reader.GetString(reader.GetOrdinal("ParentMenuName")),
-                    Controller = reader.IsDBNull(reader.GetOrdinal("Controller")) ? null : reader.GetString(reader.GetOrdinal("Controller")),
-                    Action = reader.IsDBNull(reader.GetOrdinal("Action")) ? null : reader.GetString(reader.GetOrdinal("Action")),
-                    Url = reader.IsDBNull(reader.GetOrdinal("Url")) ? null : reader.GetString(reader.GetOrdinal("Url")),
-                    IconClass = reader.IsDBNull(reader.GetOrdinal("IconClass")) ? null : reader.GetString(reader.GetOrdinal("IconClass")),
-                    DisplayOrder = reader.GetInt32(reader.GetOrdinal("DisplayOrder")),
-                    IsChecked = reader.GetInt32(reader.GetOrdinal("IsChecked")) == 1
-                });
+                    list.Add(new RoleMenuItemVM
+                    {
+                        MenuId = reader.GetInt32(reader.GetOrdinal("MenuId")),
+                        MenuName = reader.GetString(reader.GetOrdinal("MenuName")),
+                        ParentId = reader.GetInt32(reader.GetOrdinal("ParentId")),
+                        ParentMenuName = reader.IsDBNull(reader.GetOrdinal("ParentMenuName")) ? null : reader.GetString(reader.GetOrdinal("ParentMenuName")),
+                        Controller = reader.IsDBNull(reader.GetOrdinal("Controller")) ? null : reader.GetString(reader.GetOrdinal("Controller")),
+                        Action = reader.IsDBNull(reader.GetOrdinal("Action")) ? null : reader.GetString(reader.GetOrdinal("Action")),
+                        Url = reader.IsDBNull(reader.GetOrdinal("Url")) ? null : reader.GetString(reader.GetOrdinal("Url")),
+                        IconClass = reader.IsDBNull(reader.GetOrdinal("IconClass")) ? null : reader.GetString(reader.GetOrdinal("IconClass")),
+                        DisplayOrder = reader.GetInt32(reader.GetOrdinal("DisplayOrder")),
+                        IsChecked = reader.GetInt32(reader.GetOrdinal("IsChecked")) == 1
+                    });
+                }
             }
 
             return list;
@@ -167,68 +188,68 @@ namespace DealerManagement.Repository.Repositories
                 }
             }
 
-                // If user is Admin, return all active menus
-                if (string.Equals(roleName, "Admin", StringComparison.OrdinalIgnoreCase))
-                {
-                    const string allMenusSql = @"
-                        SELECT 
-                            m.Id, m.Name, m.Controller, m.Action, m.Url, m.IconClass,
-                            m.ParentId, m.SubParentId, m.SubChildId, m.DisplayOrder, m.Module, m.IsActive, m.CreatedAt,
-                            (SELECT COUNT(1) FROM dbo.Menu c WHERE c.ParentId = m.Id AND c.IsActive = 1) AS TotalChild,
-                            0 AS TotalSubChild
-                        FROM dbo.Menu m
-                        WHERE m.IsActive = 1
-                        ORDER BY 
-                            CASE WHEN m.ParentId = 0 THEN m.Id ELSE m.ParentId END ASC,
-                            CASE WHEN m.ParentId = 0 THEN 0 ELSE 1 END ASC,
-                            m.DisplayOrder ASC";
-
-                    var allMenus = new List<Menu>();
-                    using var allCmd = CreateCommand(allMenusSql, conn);
-                    using var reader = await allCmd.ExecuteReaderAsync();
-                    while (await reader.ReadAsync())
-                    {
-                        allMenus.Add(MapMenu(reader));
-                    }
-                    return allMenus;
-                }
-
-                if (!roleId.HasValue)
-                {
-                    // No role assigned, return empty list
-                    return new List<Menu>();
-                }
-
-                // Get authorized menus for user via RoleMenu
-                const string authMenusSql = @"
+            // If user is Admin, return all active menus
+            if (string.Equals(roleName, "Admin", StringComparison.OrdinalIgnoreCase))
+            {
+                const string allMenusSql = @"
                     SELECT 
                         m.Id, m.Name, m.Controller, m.Action, m.Url, m.IconClass,
                         m.ParentId, m.SubParentId, m.SubChildId, m.DisplayOrder, m.Module, m.IsActive, m.CreatedAt,
-                        (SELECT COUNT(1) FROM dbo.Menu c 
-                         WHERE c.ParentId = m.Id AND c.IsActive = 1 
-                           AND EXISTS (SELECT 1 FROM dbo.RoleMenu crm WHERE crm.MenuId = c.Id AND crm.RoleId = @RoleId)) AS TotalChild,
+                        (SELECT COUNT(1) FROM dbo.Menu c WHERE c.ParentId = m.Id AND c.IsActive = 1) AS TotalChild,
                         0 AS TotalSubChild
                     FROM dbo.Menu m
-                    WHERE m.IsActive = 1 
-                      AND EXISTS (SELECT 1 FROM dbo.RoleMenu rm WHERE rm.MenuId = m.Id AND rm.RoleId = @RoleId)
+                    WHERE m.IsActive = 1
                     ORDER BY 
                         CASE WHEN m.ParentId = 0 THEN m.Id ELSE m.ParentId END ASC,
                         CASE WHEN m.ParentId = 0 THEN 0 ELSE 1 END ASC,
                         m.DisplayOrder ASC";
 
-                var list = new List<Menu>();
-                using (var cmd = CreateCommand(authMenusSql, conn))
+                var allMenus = new List<Menu>();
+                using var allCmd = CreateCommand(allMenusSql, conn);
+                using var reader = await allCmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
                 {
-                    cmd.Parameters.Add("@UserId", SqlDbType.Int).Value = userId;
-                    cmd.Parameters.Add("@RoleId", SqlDbType.Int).Value = roleId.Value;
-                    using var reader = await cmd.ExecuteReaderAsync();
-                    while (await reader.ReadAsync())
-                    {
-                        list.Add(MapMenu(reader));
-                    }
+                    allMenus.Add(MapMenu(reader));
                 }
+                return allMenus;
+            }
 
-                return list;
+            if (!roleId.HasValue)
+            {
+                return new List<Menu>();
+            }
+
+            // Get authorized menus for user via RoleMenu (Admin module menus strictly excluded for non-Admin)
+            const string authMenusSql = @"
+                SELECT 
+                    m.Id, m.Name, m.Controller, m.Action, m.Url, m.IconClass,
+                    m.ParentId, m.SubParentId, m.SubChildId, m.DisplayOrder, m.Module, m.IsActive, m.CreatedAt,
+                    (SELECT COUNT(1) FROM dbo.Menu c 
+                     WHERE c.ParentId = m.Id AND c.IsActive = 1 
+                       AND ISNULL(c.Module, '') <> 'Admin'
+                       AND EXISTS (SELECT 1 FROM dbo.RoleMenu crm WHERE crm.MenuId = c.Id AND crm.RoleId = @RoleId)) AS TotalChild,
+                    0 AS TotalSubChild
+                FROM dbo.Menu m
+                WHERE m.IsActive = 1 
+                  AND ISNULL(m.Module, '') <> 'Admin'
+                  AND EXISTS (SELECT 1 FROM dbo.RoleMenu rm WHERE rm.MenuId = m.Id AND rm.RoleId = @RoleId)
+                ORDER BY 
+                    CASE WHEN m.ParentId = 0 THEN m.Id ELSE m.ParentId END ASC,
+                    CASE WHEN m.ParentId = 0 THEN 0 ELSE 1 END ASC,
+                    m.DisplayOrder ASC";
+
+            var list = new List<Menu>();
+            using (var cmd = CreateCommand(authMenusSql, conn))
+            {
+                cmd.Parameters.Add("@RoleId", SqlDbType.Int).Value = roleId.Value;
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    list.Add(MapMenu(reader));
+                }
+            }
+
+            return list;
         }
 
         public async Task<bool> SaveRoleMenusAsync(int roleId, List<int> menuIds, string? createdBy)
@@ -239,6 +260,18 @@ namespace DealerManagement.Repository.Repositories
 
             try
             {
+                string? roleName = null;
+                const string checkRoleSql = "SELECT Name FROM dbo.Role WHERE Id = @RoleId";
+                using (var rCmd = conn.CreateCommand())
+                {
+                    rCmd.Transaction = transaction;
+                    rCmd.CommandText = checkRoleSql;
+                    rCmd.Parameters.Add("@RoleId", SqlDbType.Int).Value = roleId;
+                    roleName = (string?)await rCmd.ExecuteScalarAsync();
+                }
+
+                bool isAdminRole = string.Equals(roleName, "Admin", StringComparison.OrdinalIgnoreCase);
+
                 // 1. Delete existing RoleMenu records for this role
                 const string deleteSql = "DELETE FROM dbo.RoleMenu WHERE RoleId = @RoleId";
                 using (var delCmd = conn.CreateCommand())
@@ -257,7 +290,7 @@ namespace DealerManagement.Repository.Repositories
 
                 // 2. Expand selected menuIds to include their parent menus (so sidebar hierarchy is preserved)
                 var allMenus = new List<Menu>();
-                const string getMenuHierarchySql = "SELECT Id, ParentId FROM dbo.Menu WHERE IsActive = 1";
+                const string getMenuHierarchySql = "SELECT Id, ParentId, Module, Controller FROM dbo.Menu WHERE IsActive = 1";
                 using (var hierarchyCmd = conn.CreateCommand())
                 {
                     hierarchyCmd.Transaction = transaction;
@@ -268,7 +301,9 @@ namespace DealerManagement.Repository.Repositories
                         allMenus.Add(new Menu
                         {
                             Id = reader.GetInt32(0),
-                            ParentId = reader.GetInt32(1)
+                            ParentId = reader.GetInt32(1),
+                            Module = reader.IsDBNull(2) ? null : reader.GetString(2),
+                            Controller = reader.IsDBNull(3) ? null : reader.GetString(3)
                         });
                     }
                 }
@@ -282,6 +317,20 @@ namespace DealerManagement.Repository.Repositories
                         finalMenuIds.Add(current.ParentId);
                         current = allMenus.FirstOrDefault(m => m.Id == current.ParentId);
                     }
+                }
+
+                // If role is not Admin, strictly exclude Admin module/controllers
+                if (!isAdminRole)
+                {
+                    var adminMenuIds = allMenus
+                        .Where(m => string.Equals(m.Module, "Admin", StringComparison.OrdinalIgnoreCase) ||
+                                    string.Equals(m.Controller, "User", StringComparison.OrdinalIgnoreCase) ||
+                                    string.Equals(m.Controller, "Role", StringComparison.OrdinalIgnoreCase) ||
+                                    string.Equals(m.Controller, "RoleMenu", StringComparison.OrdinalIgnoreCase))
+                        .Select(m => m.Id)
+                        .ToHashSet();
+
+                    finalMenuIds.RemoveWhere(id => adminMenuIds.Contains(id));
                 }
 
                 // 3. Insert each distinct menu into dbo.RoleMenu
@@ -298,27 +347,6 @@ namespace DealerManagement.Repository.Repositories
                     insCmd.Parameters.Add("@MenuId", SqlDbType.Int).Value = mId;
                     insCmd.Parameters.Add("@CreatedBy", SqlDbType.NVarChar, 100).Value = (object?)createdBy ?? DBNull.Value;
                     await insCmd.ExecuteNonQueryAsync();
-                }
-
-                // 4. Synchronize dbo.UserMenu for all users having this Role if table exists
-                const string syncUserMenuSql = @"
-                    IF OBJECT_ID('dbo.UserMenu', 'U') IS NOT NULL
-                    BEGIN
-                        DELETE FROM dbo.UserMenu WHERE RoleId = @RoleId;
-                        INSERT INTO dbo.UserMenu (UserId, RoleId, MenuId, List, [Insert], [Delete], Post, CreatedAt, CreatedBy)
-                        SELECT u.UserID, @RoleId, rm.MenuId, 1, 1, 1, 1, GETDATE(), @CreatedBy
-                        FROM dbo.Users u
-                        CROSS JOIN dbo.RoleMenu rm
-                        WHERE u.RoleID = @RoleId AND rm.RoleId = @RoleId AND u.IsActive = 1;
-                    END";
-
-                using (var syncCmd = conn.CreateCommand())
-                {
-                    syncCmd.Transaction = transaction;
-                    syncCmd.CommandText = syncUserMenuSql;
-                    syncCmd.Parameters.Add("@RoleId", SqlDbType.Int).Value = roleId;
-                    syncCmd.Parameters.Add("@CreatedBy", SqlDbType.NVarChar, 100).Value = (object?)createdBy ?? DBNull.Value;
-                    await syncCmd.ExecuteNonQueryAsync();
                 }
 
                 await transaction.CommitAsync();
@@ -352,7 +380,6 @@ namespace DealerManagement.Repository.Repositories
             // Check if user is active and whether they have Admin role
             const string checkUserSql = @"
                 SELECT TOP 1 
-                    u.UserName,
                     ISNULL(u.RoleID, ur.RoleID) AS RoleID, 
                     ISNULL(r.Name, r2.Name) AS RoleName, 
                     u.IsActive
@@ -372,15 +399,25 @@ namespace DealerManagement.Repository.Repositories
                     bool isActive = reader.GetBoolean(reader.GetOrdinal("IsActive"));
                     if (!isActive) return false;
 
-                    string? userName = reader.IsDBNull(reader.GetOrdinal("UserName")) ? null : reader.GetString(reader.GetOrdinal("UserName"));
                     string? roleName = reader.IsDBNull(reader.GetOrdinal("RoleName")) ? null : reader.GetString(reader.GetOrdinal("RoleName"));
                     if (!reader.IsDBNull(reader.GetOrdinal("RoleID")))
                     {
                         roleId = reader.GetInt32(reader.GetOrdinal("RoleID"));
                     }
 
-                    if (string.Equals(roleName, "Admin", StringComparison.OrdinalIgnoreCase) ||
-                        string.Equals(userName, "admin", StringComparison.OrdinalIgnoreCase))
+                    bool isAdmin = string.Equals(roleName, "Admin", StringComparison.OrdinalIgnoreCase);
+
+                    // Admin management controllers strictly require Admin role
+                    bool isAdminController = controller.Equals("User", StringComparison.OrdinalIgnoreCase) ||
+                                              controller.Equals("Role", StringComparison.OrdinalIgnoreCase) ||
+                                              controller.Equals("RoleMenu", StringComparison.OrdinalIgnoreCase);
+
+                    if (isAdminController)
+                    {
+                        return isAdmin;
+                    }
+
+                    if (isAdmin)
                     {
                         return true;
                     }
@@ -401,6 +438,7 @@ namespace DealerManagement.Repository.Repositories
                 SELECT COUNT(1)
                 FROM dbo.Menu m
                 WHERE m.IsActive = 1 
+                  AND ISNULL(m.Module, '') <> 'Admin'
                   AND m.Controller = @Controller
                   AND EXISTS (
                       SELECT 1 FROM dbo.RoleMenu rm 
@@ -440,4 +478,3 @@ namespace DealerManagement.Repository.Repositories
         }
     }
 }
-
