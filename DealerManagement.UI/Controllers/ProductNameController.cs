@@ -26,8 +26,15 @@ namespace DealerManagement.UI.Controllers
         [HttpPost]
         public async Task<IActionResult> GetGridData(GridOptions options)
         {
-            var (items, total) = await _service.GetGridDataAsync(options);
-            return Json(new { items, totalCount = total });
+            try
+            {
+                var (items, total) = await _service.GetGridDataAsync(options);
+                return Json(new { items, totalCount = total });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { items = new List<ProductName>(), totalCount = 0, error = ex.Message });
+            }
         }
 
         [HttpGet]

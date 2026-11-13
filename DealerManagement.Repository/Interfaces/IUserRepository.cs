@@ -15,9 +15,11 @@ namespace DealerManagement.Repository.Interfaces
         Task<int> UpdateAsync(User user);
         Task<int> UpdateStatusAsync(int userId, bool isActive, string updatedBy);
         Task<int> UpdatePasswordAsync(int userId, string passwordHash, string updatedBy);
+        Task<int> UpdateProfilePictureAsync(int userId, string? profilePicture, string updatedBy);
         Task<bool> IsUserNameExistsAsync(string userName, int excludeUserId = 0);
         Task<bool> AssignRoleToUserAsync(int userId, int roleId, string? updatedBy);
         Task<int> GetActiveAdminCountAsync();
+        Task EnsureProfilePictureColumnExistsAsync();
     }
 }
 

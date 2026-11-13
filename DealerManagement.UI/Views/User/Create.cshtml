@@ -26,7 +26,7 @@
             <div class="card-header">
                 <h3 class="card-title font-weight-bold">User Information</h3>
             </div>
-            <form asp-action="Create" method="post">
+            <form asp-action="Create" method="post" enctype="multipart/form-data">
                 @Html.AntiForgeryToken()
                 <div class="card-body">
                     @if (!ViewData.ModelState.IsValid)
@@ -36,6 +36,34 @@
                             @Html.ValidationSummary(false, "")
                         </div>
                     }
+
+                    <!-- Profile Picture Upload Section -->
+                    <div class="row align-items-center mb-4 p-3 rounded" style="background-color: #f8f9fa; border: 1px dashed #ced4da;">
+                        <div class="col-sm-3 text-center mb-2 mb-sm-0">
+                            <div class="position-relative d-inline-block">
+                                <img id="profilePicturePreview" 
+                                     src="~/AdminLte/dist/img/avatar5.png" 
+                                     alt="Profile Preview" 
+                                     class="img-circle elevation-2" 
+                                     style="width: 100px; height: 100px; object-fit: cover; border: 3px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.15);" />
+                            </div>
+                        </div>
+                        <div class="col-sm-9">
+                            <label class="font-weight-bold mb-1">
+                                <i class="fas fa-camera mr-1 text-primary"></i> Profile Picture
+                            </label>
+                            <div class="custom-file">
+                                <input type="file" name="profilePictureFile" id="profilePictureFile" class="custom-file-input" accept="image/jpeg,image/png,image/gif,image/webp" />
+                                <label class="custom-file-label" for="profilePictureFile" id="profilePictureFileLabel">Choose photo...</label>
+                            </div>
+                            <div class="d-flex align-items-center justify-content-between mt-1">
+                                <small class="form-text text-muted">Allowed formats: JPG, PNG, GIF, WEBP (Max 5MB).</small>
+                                <button type="button" class="btn btn-outline-danger btn-xs d-none" id="btnResetPicture">
+                                    <i class="fas fa-times mr-1"></i> Remove
+                                </button>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="row">
                         <div class="col-md-6 form-group">
@@ -116,4 +144,44 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            var defaultAvatar = '/AdminLte/dist/img/avatar5.png';
+
+            $('#profilePictureFile').on('change', function (e) {
+                var file = this.files[0];
+                if (file) {
+                    if (file.size > 5 * 1024 * 1024) {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error('Profile picture file size cannot exceed 5 MB.');
+                        } else {
+                            alert('Profile picture file size cannot exceed 5 MB.');
+                        }
+                        this.value = '';
+                        return;
+                    }
+
+                    $('#profilePictureFileLabel').text(file.name);
+
+                    var reader = new FileReader();
+                    reader.onload = function (event) {
+                        $('#profilePicturePreview').attr('src', event.target.result);
+                    };
+                    reader.readAsDataURL(file);
+
+                    $('#btnResetPicture').removeClass('d-none');
+                }
+            });
+
+            $('#btnResetPicture').on('click', function () {
+                $('#profilePictureFile').val('');
+                $('#profilePictureFileLabel').text('Choose photo...');
+                $('#profilePicturePreview').attr('src', defaultAvatar);
+                $(this).addClass('d-none');
+            });
+        });
+    </script>
+}
 

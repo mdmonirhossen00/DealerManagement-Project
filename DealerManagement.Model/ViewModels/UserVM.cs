@@ -44,6 +44,11 @@ namespace DealerManagement.Model.ViewModels
 
         public string? RoleName { get; set; }
 
+        [Display(Name = "Profile Picture")]
+        public string? ProfilePicture { get; set; }
+
+        public bool RemoveProfilePicture { get; set; }
+
         [Display(Name = "Created At")]
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 

@@ -104,6 +104,7 @@
                             userID: { type: "number" },
                             userName: { type: "string" },
                             fullName: { type: "string" },
+                            profilePicture: { type: "string" },
                             email: { type: "string" },
                             phoneNumber: { type: "string" },
                             roleName: { type: "string" },
@@ -146,6 +147,18 @@
                                 ? "<button class='btn btn-sm btn-danger btn-toggle-status' data-id='" + dataItem.userID + "' data-status='false' title='Deactivate User'><i class='fas fa-user-slash'></i></button>"
                                 : "<button class='btn btn-sm btn-success btn-toggle-status' data-id='" + dataItem.userID + "' data-status='true' title='Activate User'><i class='fas fa-user-check'></i></button>";
                             return editBtn + keyBtn + toggleBtn;
+                        }
+                    },
+                    {
+                        title: "Photo",
+                        width: 75,
+                        sortable: false,
+                        filterable: false,
+                        headerAttributes: { style: "text-align: center;" },
+                        attributes: { style: "text-align: center;" },
+                        template: function (dataItem) {
+                            var pic = dataItem.profilePicture ? dataItem.profilePicture : "/AdminLte/dist/img/avatar5.png";
+                            return "<img src='" + pic + "' class='img-circle elevation-1' style='width:34px;height:34px;object-fit:cover;border:1px solid #ced4da;' onerror=\"this.src='/AdminLte/dist/img/avatar5.png'\" alt='Avatar' />";
                         }
                     },
                     { field: "userID", title: "ID", width: 60, attributes: { style: "text-align: center;" } },

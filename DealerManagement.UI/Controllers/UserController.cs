@@ -1,7 +1,11 @@
 using System;
+using System.IO;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using DealerManagement.Model.Common;
 using DealerManagement.Model.KendoCommon;
@@ -15,11 +19,16 @@ namespace DealerManagement.UI.Controllers
     {
         private readonly IUserService _userService;
         private readonly IRoleService _roleService;
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
-        public UserController(IUserService userService, IRoleService roleService)
+        public UserController(
+            IUserService userService, 
+            IRoleService roleService, 
+            IWebHostEnvironment webHostEnvironment)
         {
             _userService = userService;
             _roleService = roleService;
+            _webHostEnvironment = webHostEnvironment;
         }
 
         [HttpGet]
@@ -53,10 +62,25 @@ namespace DealerManagement.UI.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(UserVM model)
+        public async Task<IActionResult> Create(UserVM model, IFormFile? profilePictureFile)
         {
             if (!ModelState.IsValid)
             {
+                var rolesResult = await _roleService.GetRolesDropdownAsync();
+                ViewBag.Roles = rolesResult.Data ?? new();
+                return View(model);
+            }
+
+            try
+            {
+                if (profilePictureFile != null && profilePictureFile.Length > 0)
+                {
+                    model.ProfilePicture = await SaveProfilePictureAsync(profilePictureFile);
+                }
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError(string.Empty, ex.Message);
                 var rolesResult = await _roleService.GetRolesDropdownAsync();
                 ViewBag.Roles = rolesResult.Data ?? new();
                 return View(model);
@@ -69,6 +93,12 @@ namespace DealerManagement.UI.Controllers
             {
                 TempData["SuccessMessage"] = result.Message;
                 return RedirectToAction("Index");
+            }
+
+            // Cleanup picture if save failed
+            if (!string.IsNullOrEmpty(model.ProfilePicture))
+            {
+                DeleteProfilePictureFile(model.ProfilePicture);
             }
 
             var rolesRes = await _roleService.GetRolesDropdownAsync();
@@ -95,10 +125,39 @@ namespace DealerManagement.UI.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(UserVM model)
+        public async Task<IActionResult> Edit(UserVM model, IFormFile? profilePictureFile)
         {
             if (!ModelState.IsValid)
             {
+                var rolesResult = await _roleService.GetRolesDropdownAsync();
+                ViewBag.Roles = rolesResult.Data ?? new();
+                return View(model);
+            }
+
+            try
+            {
+                var existingUser = await _userService.GetByIdAsync(model.UserID);
+                string? oldPicture = existingUser.Data?.ProfilePicture;
+
+                if (model.RemoveProfilePicture)
+                {
+                    DeleteProfilePictureFile(oldPicture);
+                    model.ProfilePicture = null;
+                }
+                else if (profilePictureFile != null && profilePictureFile.Length > 0)
+                {
+                    var newPicture = await SaveProfilePictureAsync(profilePictureFile);
+                    DeleteProfilePictureFile(oldPicture);
+                    model.ProfilePicture = newPicture;
+                }
+                else
+                {
+                    model.ProfilePicture = oldPicture;
+                }
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError(string.Empty, ex.Message);
                 var rolesResult = await _roleService.GetRolesDropdownAsync();
                 ViewBag.Roles = rolesResult.Data ?? new();
                 return View(model);
@@ -138,6 +197,60 @@ namespace DealerManagement.UI.Controllers
             string currentUserName = User.Identity?.Name ?? "System";
             var result = await _userService.ChangePasswordAsync(model, currentUserName);
             return Json(new { success = result.Success, message = result.Message });
+        }
+
+        private async Task<string?> SaveProfilePictureAsync(IFormFile? file)
+        {
+            if (file == null || file.Length == 0) return null;
+
+            if (file.Length > 5 * 1024 * 1024)
+            {
+                throw new InvalidOperationException("Profile picture file size cannot exceed 5 MB.");
+            }
+
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+            var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (!allowedExtensions.Contains(ext))
+            {
+                throw new InvalidOperationException("Invalid image format. Allowed formats: JPG, JPEG, PNG, GIF, WEBP.");
+            }
+
+            var uploadDir = Path.Combine(_webHostEnvironment.WebRootPath, "uploads", "profile-pictures");
+            if (!Directory.Exists(uploadDir))
+            {
+                Directory.CreateDirectory(uploadDir);
+            }
+
+            var uniqueFileName = $"user_{Guid.NewGuid():N}{ext}";
+            var filePath = Path.Combine(uploadDir, uniqueFileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            return $"/uploads/profile-pictures/{uniqueFileName}";
+        }
+
+        private void DeleteProfilePictureFile(string? relativePath)
+        {
+            if (string.IsNullOrWhiteSpace(relativePath)) return;
+            try
+            {
+                if (relativePath.StartsWith("/uploads/profile-pictures/", StringComparison.OrdinalIgnoreCase))
+                {
+                    var fileName = Path.GetFileName(relativePath);
+                    var fullPath = Path.Combine(_webHostEnvironment.WebRootPath, "uploads", "profile-pictures", fileName);
+                    if (System.IO.File.Exists(fullPath))
+                    {
+                        System.IO.File.Delete(fullPath);
+                    }
+                }
+            }
+            catch
+            {
+                // Ignore cleanup errors
+            }
         }
     }
 }

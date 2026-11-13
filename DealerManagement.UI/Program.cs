@@ -127,18 +127,21 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-// Automatically seed and sync all menus in dbo.Menu at startup
+// Automatically seed and sync all menus and schema in dbo at startup
 using (var scope = app.Services.CreateScope())
 {
     try
     {
         var menuRepo = scope.ServiceProvider.GetRequiredService<IMenuRepository>();
         await menuRepo.GetActiveMenusAsync();
+
+        var userRepo = scope.ServiceProvider.GetRequiredService<IUserRepository>();
+        await userRepo.EnsureProfilePictureColumnExistsAsync();
     }
     catch (Exception ex)
     {
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Error initializing database menus.");
+        logger.LogError(ex, "Error initializing database menus or schema.");
     }
 }
 

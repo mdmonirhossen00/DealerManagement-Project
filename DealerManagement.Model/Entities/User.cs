@@ -36,6 +36,10 @@ namespace DealerManagement.Model.Entities
 
         public string? RoleName { get; set; }
 
+        [StringLength(500)]
+        [Display(Name = "Profile Picture")]
+        public string? ProfilePicture { get; set; }
+
         [Display(Name = "Created At")]
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 

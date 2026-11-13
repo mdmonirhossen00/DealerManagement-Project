@@ -22,6 +22,7 @@ namespace DealerManagement.Repository.Repositories
             const string sql = @"
                 SELECT TOP 1 
                     u.UserID, u.UserName, u.FullName, u.Email, u.PhoneNumber, u.PasswordHash, u.IsActive, 
+                    u.ProfilePicture,
                     ISNULL(u.RoleID, ur.RoleID) AS RoleID, 
                     ISNULL(r.Name, r2.Name) AS RoleName, 
                     u.CreatedAt, u.CreatedBy, u.UpdatedAt, u.UpdatedBy
@@ -49,6 +50,7 @@ namespace DealerManagement.Repository.Repositories
             const string sql = @"
                 SELECT TOP 1 
                     u.UserID, u.UserName, u.FullName, u.Email, u.PhoneNumber, u.PasswordHash, u.IsActive, 
+                    u.ProfilePicture,
                     ISNULL(u.RoleID, ur.RoleID) AS RoleID, 
                     ISNULL(r.Name, r2.Name) AS RoleName, 
                     u.CreatedAt, u.CreatedBy, u.UpdatedAt, u.UpdatedBy
@@ -76,6 +78,7 @@ namespace DealerManagement.Repository.Repositories
             const string sql = @"
                 SELECT 
                     u.UserID, u.UserName, u.FullName, u.Email, u.PhoneNumber, u.PasswordHash, u.IsActive, 
+                    u.ProfilePicture,
                     ISNULL(u.RoleID, ur.RoleID) AS RoleID, 
                     ISNULL(r.Name, r2.Name) AS RoleName, 
                     u.CreatedAt, u.CreatedBy, u.UpdatedAt, u.UpdatedBy
@@ -103,6 +106,7 @@ namespace DealerManagement.Repository.Repositories
             const string baseQuery = @"
                 SELECT 
                     u.UserID, u.UserName, u.FullName, u.Email, u.PhoneNumber, u.PasswordHash, u.IsActive, 
+                    u.ProfilePicture,
                     u.RoleID, r.Name AS RoleName, u.CreatedAt, u.CreatedBy, u.UpdatedAt, u.UpdatedBy
                 FROM dbo.Users u
                 LEFT JOIN dbo.Role r ON u.RoleID = r.Id";
@@ -145,8 +149,8 @@ namespace DealerManagement.Repository.Repositories
         public async Task<int> InsertAsync(User user)
         {
             const string sql = @"
-                INSERT INTO dbo.Users (UserName, FullName, Email, PhoneNumber, PasswordHash, IsActive, RoleID, CreatedAt, CreatedBy)
-                VALUES (@UserName, @FullName, @Email, @PhoneNumber, @PasswordHash, @IsActive, @RoleID, @CreatedAt, @CreatedBy);
+                INSERT INTO dbo.Users (UserName, FullName, Email, PhoneNumber, PasswordHash, IsActive, RoleID, ProfilePicture, CreatedAt, CreatedBy)
+                VALUES (@UserName, @FullName, @Email, @PhoneNumber, @PasswordHash, @IsActive, @RoleID, @ProfilePicture, @CreatedAt, @CreatedBy);
                 SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
             using var conn = GetConnection();
@@ -158,6 +162,7 @@ namespace DealerManagement.Repository.Repositories
             cmd.Parameters.Add("@PasswordHash", SqlDbType.NVarChar, 500).Value = user.PasswordHash;
             cmd.Parameters.Add("@IsActive", SqlDbType.Bit).Value = user.IsActive;
             cmd.Parameters.Add("@RoleID", SqlDbType.Int).Value = (object?)user.RoleID ?? DBNull.Value;
+            cmd.Parameters.Add("@ProfilePicture", SqlDbType.NVarChar, 500).Value = (object?)user.ProfilePicture ?? DBNull.Value;
             cmd.Parameters.Add("@CreatedAt", SqlDbType.DateTime2).Value = user.CreatedAt;
             cmd.Parameters.Add("@CreatedBy", SqlDbType.NVarChar, 50).Value = (object?)user.CreatedBy ?? DBNull.Value;
 
@@ -193,6 +198,7 @@ namespace DealerManagement.Repository.Repositories
                     PhoneNumber = @PhoneNumber,
                     IsActive = @IsActive,
                     RoleID = @RoleID,
+                    ProfilePicture = @ProfilePicture,
                     UpdatedAt = SYSDATETIME(),
                     UpdatedBy = @UpdatedBy
                 WHERE UserID = @UserID";
@@ -205,6 +211,7 @@ namespace DealerManagement.Repository.Repositories
             cmd.Parameters.Add("@PhoneNumber", SqlDbType.NVarChar, 30).Value = (object?)user.PhoneNumber ?? DBNull.Value;
             cmd.Parameters.Add("@IsActive", SqlDbType.Bit).Value = user.IsActive;
             cmd.Parameters.Add("@RoleID", SqlDbType.Int).Value = (object?)user.RoleID ?? DBNull.Value;
+            cmd.Parameters.Add("@ProfilePicture", SqlDbType.NVarChar, 500).Value = (object?)user.ProfilePicture ?? DBNull.Value;
             cmd.Parameters.Add("@UpdatedBy", SqlDbType.NVarChar, 50).Value = (object?)user.UpdatedBy ?? DBNull.Value;
 
             await conn.OpenAsync();
@@ -335,6 +342,49 @@ namespace DealerManagement.Repository.Repositories
             return Convert.ToInt32(await cmd.ExecuteScalarAsync() ?? 0);
         }
 
+        public async Task<int> UpdateProfilePictureAsync(int userId, string? profilePicture, string updatedBy)
+        {
+            const string sql = @"
+                UPDATE dbo.Users
+                SET ProfilePicture = @ProfilePicture,
+                    UpdatedAt = SYSDATETIME(),
+                    UpdatedBy = @UpdatedBy
+                WHERE UserID = @UserID";
+
+            using var conn = GetConnection();
+            using var cmd = CreateCommand(sql, conn);
+            cmd.Parameters.Add("@UserID", SqlDbType.Int).Value = userId;
+            cmd.Parameters.Add("@ProfilePicture", SqlDbType.NVarChar, 500).Value = (object?)profilePicture ?? DBNull.Value;
+            cmd.Parameters.Add("@UpdatedBy", SqlDbType.NVarChar, 50).Value = updatedBy;
+
+            await conn.OpenAsync();
+            return await cmd.ExecuteNonQueryAsync();
+        }
+
+        public async Task EnsureProfilePictureColumnExistsAsync()
+        {
+            const string sql = @"
+                IF NOT EXISTS (
+                    SELECT 1 FROM sys.columns 
+                    WHERE object_id = OBJECT_ID('dbo.Users') AND name = 'ProfilePicture'
+                )
+                BEGIN
+                    ALTER TABLE dbo.Users ADD ProfilePicture NVARCHAR(500) NULL;
+                END";
+
+            try
+            {
+                using var conn = GetConnection();
+                using var cmd = CreateCommand(sql, conn);
+                await conn.OpenAsync();
+                await cmd.ExecuteNonQueryAsync();
+            }
+            catch
+            {
+                // Silently ignore if already exists or permission issues
+            }
+        }
+
         private static User MapUser(SqlDataReader reader)
         {
             return new User
@@ -348,11 +398,24 @@ namespace DealerManagement.Repository.Repositories
                 IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive")),
                 RoleID = reader.IsDBNull(reader.GetOrdinal("RoleID")) ? null : reader.GetInt32(reader.GetOrdinal("RoleID")),
                 RoleName = reader.IsDBNull(reader.GetOrdinal("RoleName")) ? null : reader.GetString(reader.GetOrdinal("RoleName")),
+                ProfilePicture = HasColumn(reader, "ProfilePicture") && !reader.IsDBNull(reader.GetOrdinal("ProfilePicture"))
+                    ? reader.GetString(reader.GetOrdinal("ProfilePicture"))
+                    : null,
                 CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt")),
                 CreatedBy = reader.IsDBNull(reader.GetOrdinal("CreatedBy")) ? null : reader.GetString(reader.GetOrdinal("CreatedBy")),
                 UpdatedAt = reader.IsDBNull(reader.GetOrdinal("UpdatedAt")) ? null : reader.GetDateTime(reader.GetOrdinal("UpdatedAt")),
                 UpdatedBy = reader.IsDBNull(reader.GetOrdinal("UpdatedBy")) ? null : reader.GetString(reader.GetOrdinal("UpdatedBy"))
             };
+        }
+
+        private static bool HasColumn(SqlDataReader reader, string columnName)
+        {
+            for (int i = 0; i < reader.FieldCount; i++)
+            {
+                if (reader.GetName(i).Equals(columnName, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            return false;
         }
     }
 }

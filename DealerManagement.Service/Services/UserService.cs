@@ -138,6 +138,7 @@ namespace DealerManagement.Service.Services
                     PasswordHash = passwordHash,
                     IsActive = model.IsActive,
                     RoleID = model.RoleID,
+                    ProfilePicture = model.ProfilePicture,
                     CreatedAt = DateTime.Now,
                     CreatedBy = createdBy
                 };
@@ -206,6 +207,14 @@ namespace DealerManagement.Service.Services
                 existing.PhoneNumber = model.PhoneNumber?.Trim();
                 existing.IsActive = model.IsActive;
                 existing.RoleID = model.RoleID;
+                if (model.RemoveProfilePicture)
+                {
+                    existing.ProfilePicture = null;
+                }
+                else if (!string.IsNullOrEmpty(model.ProfilePicture))
+                {
+                    existing.ProfilePicture = model.ProfilePicture;
+                }
                 existing.UpdatedBy = updatedBy;
 
                 await _userRepository.UpdateAsync(existing);
@@ -361,6 +370,40 @@ namespace DealerManagement.Service.Services
             }
         }
 
+        public async Task<ResultModel<string>> UpdateProfilePictureAsync(int userId, string? profilePictureUrl, string updatedBy)
+        {
+            try
+            {
+                var user = await _userRepository.GetByIdAsync(userId);
+                if (user == null)
+                {
+                    return new ResultModel<string>
+                    {
+                        Status = Status.Fail,
+                        Message = "User not found."
+                    };
+                }
+
+                await _userRepository.UpdateProfilePictureAsync(userId, profilePictureUrl, updatedBy);
+
+                return new ResultModel<string>
+                {
+                    Status = Status.Success,
+                    Message = "Profile picture updated successfully.",
+                    Data = profilePictureUrl ?? string.Empty
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ResultModel<string>
+                {
+                    Status = Status.Fail,
+                    Message = ex.Message,
+                    Exception = ex
+                };
+            }
+        }
+
         private static UserVM MapToViewModel(User user)
         {
             return new UserVM
@@ -373,6 +416,7 @@ namespace DealerManagement.Service.Services
                 IsActive = user.IsActive,
                 RoleID = user.RoleID,
                 RoleName = user.RoleName,
+                ProfilePicture = user.ProfilePicture,
                 CreatedAt = user.CreatedAt
             };
         }

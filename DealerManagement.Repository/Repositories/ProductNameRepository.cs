@@ -20,9 +20,9 @@ namespace DealerManagement.Repository.Repositories
         public async Task<List<ProductName>> GetAllAsync()
         {
             const string sql = @"
-                SELECT pn.ProductNameID, pn.ProductCategoryID, pn.ProductCode, pn.ProductName AS [Name], pn.Description, pn.IsActive, pn.CreatedAt, pc.CategoryName
+                SELECT pn.ProductNameID, pn.ProductCategoryID, pn.ProductCode, pn.ProductName AS [Name], pn.Description, pn.IsActive, pn.CreatedAt, ISNULL(pc.CategoryName, '') AS CategoryName
                 FROM dbo.ProductName pn
-                INNER JOIN dbo.ProductCategory pc ON pn.ProductCategoryID = pc.ProductCategoryID
+                LEFT JOIN dbo.ProductCategory pc ON pn.ProductCategoryID = pc.ProductCategoryID
                 ORDER BY pn.ProductName";
 
             var list = new List<ProductName>();
@@ -40,9 +40,9 @@ namespace DealerManagement.Repository.Repositories
         public async Task<ProductName?> GetByIdAsync(int id)
         {
             const string sql = @"
-                SELECT TOP 1 pn.ProductNameID, pn.ProductCategoryID, pn.ProductCode, pn.ProductName AS [Name], pn.Description, pn.IsActive, pn.CreatedAt, pc.CategoryName
+                SELECT TOP 1 pn.ProductNameID, pn.ProductCategoryID, pn.ProductCode, pn.ProductName AS [Name], pn.Description, pn.IsActive, pn.CreatedAt, ISNULL(pc.CategoryName, '') AS CategoryName
                 FROM dbo.ProductName pn
-                INNER JOIN dbo.ProductCategory pc ON pn.ProductCategoryID = pc.ProductCategoryID
+                LEFT JOIN dbo.ProductCategory pc ON pn.ProductCategoryID = pc.ProductCategoryID
                 WHERE pn.ProductNameID = @ID";
 
             using var conn = GetConnection();
@@ -60,11 +60,11 @@ namespace DealerManagement.Repository.Repositories
         public async Task<(List<ProductName> Items, int TotalCount)> GetGridDataAsync(GridOptions options)
         {
             const string baseQuery = @"
-                SELECT pn.ProductNameID, pn.ProductCategoryID, pn.ProductCode, pn.ProductName AS [Name], pn.Description, pn.IsActive, pn.CreatedAt, pc.CategoryName
+                SELECT pn.ProductNameID, pn.ProductCategoryID, pn.ProductCode, pn.ProductName AS [Name], pn.Description, pn.IsActive, pn.CreatedAt, ISNULL(pc.CategoryName, '') AS CategoryName
                 FROM dbo.ProductName pn
-                INNER JOIN dbo.ProductCategory pc ON pn.ProductCategoryID = pc.ProductCategoryID";
+                LEFT JOIN dbo.ProductCategory pc ON pn.ProductCategoryID = pc.ProductCategoryID";
 
-            string countQuery = "SELECT COUNT(1) FROM dbo.ProductName pn INNER JOIN dbo.ProductCategory pc ON pn.ProductCategoryID = pc.ProductCategoryID";
+            string countQuery = "SELECT COUNT(1) FROM dbo.ProductName pn LEFT JOIN dbo.ProductCategory pc ON pn.ProductCategoryID = pc.ProductCategoryID";
 
             string filterCondition = options.filter != null ? GridQueryBuilder<ProductName>.FilterCondition(options.filter) : "";
             if (!string.IsNullOrEmpty(filterCondition))
@@ -72,7 +72,7 @@ namespace DealerManagement.Repository.Repositories
                 countQuery += " WHERE " + filterCondition;
             }
 
-            string pagedSql = GridQueryBuilder<ProductName>.Query(options, baseQuery, "pn.ProductNameID DESC");
+            string pagedSql = GridQueryBuilder<ProductName>.Query(options, baseQuery, "ProductNameID DESC");
 
             var list = new List<ProductName>();
             int totalCount = 0;
@@ -179,7 +179,7 @@ namespace DealerManagement.Repository.Repositories
                 Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? null : reader.GetString(reader.GetOrdinal("Description")),
                 IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive")),
                 CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt")),
-                CategoryName = reader.GetString(reader.GetOrdinal("CategoryName"))
+                CategoryName = reader.IsDBNull(reader.GetOrdinal("CategoryName")) ? string.Empty : reader.GetString(reader.GetOrdinal("CategoryName"))
             };
         }
     }

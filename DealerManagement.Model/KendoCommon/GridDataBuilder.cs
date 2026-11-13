@@ -35,13 +35,14 @@ namespace DealerManagement.Model.KendoCommon
             {
                 foreach (var gridSort in options.sort)
                 {
+                    string cleanField = CleanColumnPrefix(gridSort.field);
                     if (string.IsNullOrEmpty(orderby))
                     {
-                        orderby += "ORDER BY " + gridSort.field + " " + gridSort.dir;
+                        orderby += "ORDER BY " + cleanField + " " + gridSort.dir;
                     }
                     else
                     {
-                        orderby += ", " + gridSort.field + " " + gridSort.dir;
+                        orderby += ", " + cleanField + " " + gridSort.dir;
                     }
                 }
             }
@@ -50,7 +51,7 @@ namespace DealerManagement.Model.KendoCommon
             {
                 if (!string.IsNullOrEmpty(orderBy))
                 {
-                    orderby = " ORDER BY " + orderBy;
+                    orderby = " ORDER BY " + CleanColumnPrefix(orderBy);
                 }
                 else
                 {
@@ -99,6 +100,12 @@ namespace DealerManagement.Model.KendoCommon
                 }
             }
             return whereClause;
+        }
+
+        private static string CleanColumnPrefix(string? field)
+        {
+            if (string.IsNullOrWhiteSpace(field)) return "";
+            return System.Text.RegularExpressions.Regex.Replace(field, @"\b[a-zA-Z0-9_]+\.([a-zA-Z0-9_]+)\b", "$1");
         }
     }
 }

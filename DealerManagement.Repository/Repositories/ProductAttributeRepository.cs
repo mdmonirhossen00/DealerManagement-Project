@@ -30,10 +30,10 @@ namespace DealerManagement.Repository.Repositories
             {
                 return new ProductColor
                 {
-                    ProductColorID = reader.GetInt32(0),
-                    ColorName = reader.GetString(1),
-                    ColorCode = reader.IsDBNull(2) ? null : reader.GetString(2),
-                    IsActive = reader.GetBoolean(3)
+                    ProductColorID = reader.GetInt32(reader.GetOrdinal("ProductColorID")),
+                    ColorName = reader.GetString(reader.GetOrdinal("ColorName")),
+                    ColorCode = reader.IsDBNull(reader.GetOrdinal("ColorCode")) ? null : reader.GetString(reader.GetOrdinal("ColorCode")),
+                    IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive"))
                 };
             }
             return null;
@@ -71,10 +71,10 @@ namespace DealerManagement.Repository.Repositories
                 {
                     list.Add(new ProductColor
                     {
-                        ProductColorID = reader.GetInt32(0),
-                        ColorName = reader.GetString(1),
-                        ColorCode = reader.IsDBNull(2) ? null : reader.GetString(2),
-                        IsActive = reader.GetBoolean(3)
+                        ProductColorID = reader.GetInt32(reader.GetOrdinal("ProductColorID")),
+                        ColorName = reader.GetString(reader.GetOrdinal("ColorName")),
+                        ColorCode = reader.IsDBNull(reader.GetOrdinal("ColorCode")) ? null : reader.GetString(reader.GetOrdinal("ColorCode")),
+                        IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive"))
                     });
                 }
             }
@@ -144,10 +144,10 @@ namespace DealerManagement.Repository.Repositories
             {
                 return new ProductSize
                 {
-                    ProductSizeID = reader.GetInt32(0),
-                    SizeName = reader.GetString(1),
-                    SortOrder = reader.GetInt32(2),
-                    IsActive = reader.GetBoolean(3)
+                    ProductSizeID = reader.GetInt32(reader.GetOrdinal("ProductSizeID")),
+                    SizeName = reader.GetString(reader.GetOrdinal("SizeName")),
+                    SortOrder = reader.GetInt32(reader.GetOrdinal("SortOrder")),
+                    IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive"))
                 };
             }
             return null;
@@ -185,10 +185,10 @@ namespace DealerManagement.Repository.Repositories
                 {
                     list.Add(new ProductSize
                     {
-                        ProductSizeID = reader.GetInt32(0),
-                        SizeName = reader.GetString(1),
-                        SortOrder = reader.GetInt32(2),
-                        IsActive = reader.GetBoolean(3)
+                        ProductSizeID = reader.GetInt32(reader.GetOrdinal("ProductSizeID")),
+                        SizeName = reader.GetString(reader.GetOrdinal("SizeName")),
+                        SortOrder = reader.GetInt32(reader.GetOrdinal("SortOrder")),
+                        IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive"))
                     });
                 }
             }
@@ -258,10 +258,10 @@ namespace DealerManagement.Repository.Repositories
             {
                 return new ProductGrade
                 {
-                    ProductGradeID = reader.GetInt32(0),
-                    GradeName = reader.GetString(1),
-                    Description = reader.IsDBNull(2) ? null : reader.GetString(2),
-                    IsActive = reader.GetBoolean(3)
+                    ProductGradeID = reader.GetInt32(reader.GetOrdinal("ProductGradeID")),
+                    GradeName = reader.GetString(reader.GetOrdinal("GradeName")),
+                    Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? null : reader.GetString(reader.GetOrdinal("Description")),
+                    IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive"))
                 };
             }
             return null;
@@ -299,10 +299,10 @@ namespace DealerManagement.Repository.Repositories
                 {
                     list.Add(new ProductGrade
                     {
-                        ProductGradeID = reader.GetInt32(0),
-                        GradeName = reader.GetString(1),
-                        Description = reader.IsDBNull(2) ? null : reader.GetString(2),
-                        IsActive = reader.GetBoolean(3)
+                        ProductGradeID = reader.GetInt32(reader.GetOrdinal("ProductGradeID")),
+                        GradeName = reader.GetString(reader.GetOrdinal("GradeName")),
+                        Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? null : reader.GetString(reader.GetOrdinal("Description")),
+                        IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive"))
                     });
                 }
             }

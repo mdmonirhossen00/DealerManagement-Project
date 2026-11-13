@@ -1,6 +1,9 @@
 @model DealerManagement.Model.ViewModels.UserVM
 @{
     ViewData["Title"] = "Edit User";
+    var defaultEditAvatar = "/AdminLte/dist/img/avatar5.png";
+    var currentEditAvatar = !string.IsNullOrEmpty(Model.ProfilePicture) ? Model.ProfilePicture : defaultEditAvatar;
+    bool hasCustomPicture = !string.IsNullOrEmpty(Model.ProfilePicture);
 }
 
 <div class="content-header">
@@ -26,9 +29,11 @@
             <div class="card-header">
                 <h3 class="card-title font-weight-bold">Edit User Details</h3>
             </div>
-            <form asp-action="Edit" method="post">
+            <form asp-action="Edit" method="post" enctype="multipart/form-data">
                 @Html.AntiForgeryToken()
                 <input type="hidden" asp-for="UserID" />
+                <input type="hidden" asp-for="ProfilePicture" id="hiddenProfilePicture" />
+                <input type="hidden" asp-for="RemoveProfilePicture" id="hiddenRemoveProfilePicture" value="false" />
 
                 <div class="card-body">
                     @if (!ViewData.ModelState.IsValid)
@@ -38,6 +43,40 @@
                             @Html.ValidationSummary(false, "")
                         </div>
                     }
+
+                    <!-- Profile Picture Section -->
+                    <div class="row align-items-center mb-4 p-3 rounded" style="background-color: #f8f9fa; border: 1px dashed #ced4da;">
+                        <div class="col-sm-3 text-center mb-2 mb-sm-0">
+                            <div class="position-relative d-inline-block">
+                                <img id="profilePicturePreview" 
+                                     src="@currentEditAvatar" 
+                                     alt="Profile Picture" 
+                                     class="img-circle elevation-2" 
+                                     style="width: 100px; height: 100px; object-fit: cover; border: 3px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.15);"
+                                     onerror="this.src='@defaultEditAvatar';" />
+                            </div>
+                        </div>
+                        <div class="col-sm-9">
+                            <label class="font-weight-bold mb-1">
+                                <i class="fas fa-camera mr-1 text-primary"></i> Change Profile Picture
+                            </label>
+                            <div class="custom-file">
+                                <input type="file" name="profilePictureFile" id="profilePictureFile" class="custom-file-input" accept="image/jpeg,image/png,image/gif,image/webp" />
+                                <label class="custom-file-label" for="profilePictureFile" id="profilePictureFileLabel">Choose new photo...</label>
+                            </div>
+                            <div class="d-flex align-items-center justify-content-between mt-2 flex-wrap">
+                                <small class="form-text text-muted">Allowed formats: JPG, PNG, GIF, WEBP (Max 5MB).</small>
+                                <div>
+                                    <button type="button" class="btn btn-outline-danger btn-xs @(hasCustomPicture ? "" : "d-none")" id="btnRemoveCurrentPicture" title="Remove current photo">
+                                        <i class="fas fa-trash-alt mr-1"></i> Remove Current Photo
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-xs d-none ml-1" id="btnCancelNewPicture" title="Revert changes">
+                                        <i class="fas fa-undo mr-1"></i> Revert
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="row">
                         <div class="col-md-6 form-group">
@@ -104,4 +143,63 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            var defaultAvatar = '/AdminLte/dist/img/avatar5.png';
+            var originalAvatar = '@(string.IsNullOrEmpty(Model.ProfilePicture) ? "/AdminLte/dist/img/avatar5.png" : Model.ProfilePicture)';
+            var hasOriginalCustom = @(!string.IsNullOrEmpty(Model.ProfilePicture) ? "true" : "false");
+
+            $('#profilePictureFile').on('change', function (e) {
+                var file = this.files[0];
+                if (file) {
+                    if (file.size > 5 * 1024 * 1024) {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error('Profile picture file size cannot exceed 5 MB.');
+                        } else {
+                            alert('Profile picture file size cannot exceed 5 MB.');
+                        }
+                        this.value = '';
+                        return;
+                    }
+
+                    $('#profilePictureFileLabel').text(file.name);
+                    $('#hiddenRemoveProfilePicture').val('false');
+
+                    var reader = new FileReader();
+                    reader.onload = function (event) {
+                        $('#profilePicturePreview').attr('src', event.target.result);
+                    };
+                    reader.readAsDataURL(file);
+
+                    $('#btnCancelNewPicture').removeClass('d-none');
+                    $('#btnRemoveCurrentPicture').addClass('d-none');
+                }
+            });
+
+            $('#btnCancelNewPicture').on('click', function () {
+                $('#profilePictureFile').val('');
+                $('#profilePictureFileLabel').text('Choose new photo...');
+                $('#profilePicturePreview').attr('src', originalAvatar);
+                $('#hiddenRemoveProfilePicture').val('false');
+                $(this).addClass('d-none');
+                if (hasOriginalCustom) {
+                    $('#btnRemoveCurrentPicture').removeClass('d-none');
+                }
+            });
+
+            $('#btnRemoveCurrentPicture').on('click', function () {
+                if (confirm('Are you sure you want to remove the current profile picture?')) {
+                    $('#hiddenRemoveProfilePicture').val('true');
+                    $('#profilePictureFile').val('');
+                    $('#profilePictureFileLabel').text('Choose new photo...');
+                    $('#profilePicturePreview').attr('src', defaultAvatar);
+                    $(this).addClass('d-none');
+                    $('#btnCancelNewPicture').removeClass('d-none');
+                }
+            });
+        });
+    </script>
+}
 
